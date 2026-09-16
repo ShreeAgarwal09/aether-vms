@@ -15,6 +15,7 @@ import { InviteVendorPage } from '@/pages/company/InviteVendorPage'
 import { SyncDataPage } from '@/pages/company/SyncDataPage'
 import { TallyIpPage } from '@/pages/company/TallyIpPage'
 import { VendorDetailPage } from '@/pages/company/VendorDetailPage'
+import { VendorReviewPage } from '@/pages/company/VendorReviewPage'
 import { VendorsPage } from '@/pages/company/VendorsPage'
 import { HomeRedirect } from '@/pages/HomeRedirect'
 import { LoginPage } from '@/pages/LoginPage'
@@ -53,6 +54,7 @@ export default function App() {
             <Route path="vendors" element={<VendorsPage />} />
             <Route path="vendors/invite" element={<InviteVendorPage />} />
             <Route path="vendors/bulk" element={<BulkInvitePage />} />
+            <Route path="vendors/:vendorId/review" element={<VendorReviewPage />} />
             <Route path="vendors/:vendorId" element={<VendorDetailPage />} />
             <Route path="sync" element={<SyncDataPage />} />
             <Route path="form-builder" element={<FormBuilderPage />} />

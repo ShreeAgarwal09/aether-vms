@@ -5,6 +5,7 @@ const INVALID = 'Invalid or expired invitation.'
 export type OnboardingPayload = {
   status: 'invited' | 'pending' | 'approved' | 'rejected' | 'blocked'
   submitted: boolean
+  rejection_reason?: string | null
   company_name: string
   vendor_email: string
   current_step: number

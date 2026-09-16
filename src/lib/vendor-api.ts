@@ -2,7 +2,7 @@ import { getSupabase } from '@/lib/supabase'
 import type { Vendor, VendorStatus } from '@/lib/types'
 
 export const VENDOR_LIST_COLUMNS =
-  'id, vendor_name, email, vendor_phone_number, status, invited_at, submitted_at, created_at, updated_at'
+  'id, vendor_name, email, vendor_phone_number, status, invited_at, submitted_at, created_at, updated_at, rejection_reason, approved_at, rejected_at, resubmitted_at'
 
 export const PAGE_SIZE = 20
 
@@ -148,5 +148,14 @@ export async function saveCompanyProfile(
 
 export type ListedVendor = Pick<
   Vendor,
-  'id' | 'vendor_name' | 'email' | 'vendor_phone_number' | 'status' | 'invited_at' | 'submitted_at' | 'created_at' | 'updated_at'
+  | 'id'
+  | 'vendor_name'
+  | 'email'
+  | 'vendor_phone_number'
+  | 'status'
+  | 'invited_at'
+  | 'submitted_at'
+  | 'created_at'
+  | 'updated_at'
+  | 'rejection_reason'
 >

@@ -170,7 +170,14 @@ export function VendorsPage() {
                         <td className="py-4 text-mist">{vendor.email}</td>
                         <td className="py-4 text-mist">{vendor.vendor_phone_number || '—'}</td>
                         <td className="py-4">
-                          <VendorStatusBadge status={vendor.status} />
+                          <div className="space-y-1">
+                            <VendorStatusBadge status={vendor.status} />
+                            {vendor.status === 'rejected' && vendor.rejection_reason ? (
+                              <p className="max-w-[220px] truncate text-xs text-amber-200" title={vendor.rejection_reason}>
+                                Needs correction
+                              </p>
+                            ) : null}
+                          </div>
                         </td>
                         <td className="py-4 text-mist">{formatDateTime(vendor.invited_at)}</td>
                         <td className="py-4 text-mist">{formatDateTime(vendor.created_at)}</td>
@@ -182,6 +189,22 @@ export function VendorsPage() {
                             >
                               View
                             </Link>
+                            {vendor.status === 'pending' ? (
+                              <Link
+                                to={`/company/vendors/${vendor.id}/review`}
+                                className="inline-flex h-9 items-center rounded-lg bg-gold px-3 text-xs font-medium text-ink"
+                              >
+                                Review
+                              </Link>
+                            ) : null}
+                            {vendor.status === 'approved' || vendor.status === 'rejected' ? (
+                              <Link
+                                to={`/company/vendors/${vendor.id}/review`}
+                                className="inline-flex h-9 items-center rounded-lg border border-gold/40 px-3 text-xs text-gold"
+                              >
+                                View submission
+                              </Link>
+                            ) : null}
                             <Button size="sm" variant="outline" onClick={() => void onResend(vendor.id)}>
                               <Mail className="h-3.5 w-3.5" />
                               Resend
@@ -204,13 +227,29 @@ export function VendorsPage() {
                       <VendorStatusBadge status={vendor.status} />
                     </div>
                     <p className="mt-2 text-sm text-mist">{vendor.vendor_phone_number || 'No phone'}</p>
-                    <div className="mt-3 flex gap-2">
+                    <div className="mt-3 flex flex-wrap gap-2">
                       <Link
                         to={`/company/vendors/${vendor.id}`}
                         className="inline-flex h-9 items-center rounded-lg border border-line px-3 text-xs text-ivory"
                       >
                         View
                       </Link>
+                      {vendor.status === 'pending' ? (
+                        <Link
+                          to={`/company/vendors/${vendor.id}/review`}
+                          className="inline-flex h-9 items-center rounded-lg bg-gold px-3 text-xs font-medium text-ink"
+                        >
+                          Review
+                        </Link>
+                      ) : null}
+                      {vendor.status === 'approved' || vendor.status === 'rejected' ? (
+                        <Link
+                          to={`/company/vendors/${vendor.id}/review`}
+                          className="inline-flex h-9 items-center rounded-lg border border-gold/40 px-3 text-xs text-gold"
+                        >
+                          View submission
+                        </Link>
+                      ) : null}
                       <Button size="sm" variant="outline" onClick={() => void onResend(vendor.id)}>
                         Resend
                       </Button>

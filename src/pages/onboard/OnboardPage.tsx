@@ -28,6 +28,8 @@ export function OnboardPage() {
   const [loading, setLoading] = useState(true)
   const [invalid, setInvalid] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [rejected, setRejected] = useState(false)
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null)
   const [companyName, setCompanyName] = useState('')
   const [vendorEmail, setVendorEmail] = useState('')
   const [step, setStep] = useState(1)
@@ -53,6 +55,8 @@ export function OnboardPage() {
     setFields(result.data.fields)
     setStep(result.data.current_step || 1)
     setSubmitted(result.data.submitted)
+    setRejected(result.data.status === 'rejected')
+    setRejectionReason(result.data.rejection_reason ?? null)
     setInvalid(false)
     setLoading(false)
   }, [token])
@@ -171,7 +175,6 @@ export function OnboardPage() {
             <h1 className="font-display text-3xl text-ivory">Onboarding received</h1>
             <p className="text-sm leading-6 text-mist">
               Your information was submitted to {companyName} and is awaiting company review. You do not need an account.
-              This phase does not include approval or rejection actions.
             </p>
           </CardContent>
         </Card>
@@ -203,6 +206,16 @@ export function OnboardPage() {
             </li>
           ))}
         </ol>
+        {rejected && rejectionReason ? (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-4 text-sm text-amber-100">
+            <p className="font-medium text-ivory">Your submission requires changes</p>
+            <p className="mt-2 leading-6">{rejectionReason}</p>
+            <p className="mt-2 text-xs text-mist">
+              Previous answers are restored below. Update what the company requested, then submit again.
+            </p>
+          </div>
+        ) : null}
+
         {banner ? (
           <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">{banner}</div>
         ) : null}

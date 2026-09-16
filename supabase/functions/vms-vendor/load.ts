@@ -196,6 +196,7 @@ export async function publicPayload(service: SupabaseClient, vendor: Record<stri
   return {
     status: vendor.status,
     submitted,
+    rejection_reason: vendor.status === 'rejected' ? vendor.rejection_reason ?? null : null,
     company_name: company?.company_name || 'the inviting company',
     vendor_email: vendor.email,
     current_step: vendor.current_step ?? 1,

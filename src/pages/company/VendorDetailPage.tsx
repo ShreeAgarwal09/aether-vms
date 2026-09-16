@@ -44,11 +44,21 @@ export function VendorDetailPage() {
       <PageHeader
         eyebrow="Vendor details"
         title={vendor?.vendor_name || 'Vendor'}
-        description="Stored invitation information. After a vendor submits the public onboarding form, status becomes pending. Company approve/reject is not in this phase."
+        description="Invitation metadata for this vendor. Open Review to read the submitted onboarding package and approve or reject pending submissions."
         action={
-          <Link to="/company/vendors" className="text-sm text-gold hover:text-gold-bright">
-            Back to vendors
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            {vendor && (vendor.status === 'pending' || vendor.status === 'approved' || vendor.status === 'rejected') ? (
+              <Link
+                to={`/company/vendors/${vendor.id}/review`}
+                className="inline-flex h-11 items-center rounded-lg bg-gold px-4 text-sm font-medium text-ink"
+              >
+                {vendor.status === 'pending' ? 'Review submission' : 'View submission'}
+              </Link>
+            ) : null}
+            <Link to="/company/vendors" className="text-sm text-gold hover:text-gold-bright">
+              Back to vendors
+            </Link>
+          </div>
         }
       />
       {loading ? <div className="h-48 animate-pulse rounded-2xl bg-navy-800/80" /> : null}
@@ -73,6 +83,12 @@ export function VendorDetailPage() {
             <Field label="Invitation date" value={formatDateTime(vendor.invited_at)} />
             <Field label="Submitted" value={formatDateTime(vendor.submitted_at ?? null)} />
             <Field label="Created" value={formatDateTime(vendor.created_at)} />
+            {vendor.status === 'rejected' && vendor.rejection_reason ? (
+              <div className="sm:col-span-2">
+                <p className="text-xs uppercase tracking-[0.16em] text-mist">Rejection reason</p>
+                <p className="mt-2 text-ivory">{vendor.rejection_reason}</p>
+              </div>
+            ) : null}
             <div className="sm:col-span-2">
               <Button variant="outline" onClick={() => void resend()}>
                 Resend invitation email

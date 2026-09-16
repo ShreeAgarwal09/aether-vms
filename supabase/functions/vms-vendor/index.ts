@@ -101,13 +101,22 @@ Deno.serve(async (req) => {
     const persistError = await persistForm(service, fresh, form, currentStep)
     if (persistError) return json({ error: persistError }, 400)
     if (submit) {
+      const wasRejected = fresh.status === 'rejected'
+      const now = new Date().toISOString()
       const { error } = await service.from('vendors').update({
         status: 'pending',
-        submitted_at: new Date().toISOString(),
-        invite_consumed_at: new Date().toISOString(),
+        submitted_at: now,
+        resubmitted_at: wasRejected ? now : fresh.resubmitted_at ?? null,
+        invite_consumed_at: now,
         current_step: 5,
       }).eq('id', vendor.id).in('status', ['invited', 'rejected'])
       if (error) return json({ error: 'Could not submit the form.' }, 400)
+      await service.from('vendor_review_history').insert({
+        vendor_id: vendor.id,
+        company_user_id: null,
+        action: wasRejected ? 'resubmitted' : 'submitted',
+        reason: null,
+      })
       const { data: after } = await service.from('vendors').select('*').eq('id', vendor.id).maybeSingle()
       return json({
         message: 'Submitted. The company will review your information.',
