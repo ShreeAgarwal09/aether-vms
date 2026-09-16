@@ -9,6 +9,7 @@ import { BulkInvitePage } from '@/pages/company/BulkInvitePage'
 import { CompanyDashboardPage } from '@/pages/company/CompanyDashboardPage'
 import { CompanyPasswordPage } from '@/pages/company/CompanyPasswordPage'
 import { CompanyProfilePage } from '@/pages/company/CompanyProfilePage'
+import { FormBuilderEditorPage } from '@/pages/company/FormBuilderEditorPage'
 import { FormBuilderPage } from '@/pages/company/FormBuilderPage'
 import { InviteVendorPage } from '@/pages/company/InviteVendorPage'
 import { SyncDataPage } from '@/pages/company/SyncDataPage'
@@ -54,6 +55,7 @@ export default function App() {
             <Route path="vendors/:vendorId" element={<VendorDetailPage />} />
             <Route path="sync" element={<SyncDataPage />} />
             <Route path="form-builder" element={<FormBuilderPage />} />
+            <Route path="form-builder/:templateId" element={<FormBuilderEditorPage />} />
             <Route path="profile" element={<CompanyProfilePage />} />
             <Route path="password" element={<CompanyPasswordPage />} />
             <Route path="tally" element={<TallyIpPage />} />

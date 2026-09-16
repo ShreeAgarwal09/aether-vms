@@ -25,7 +25,7 @@ const links = [
   { to: '/company/vendors/invite', label: 'Invite vendor', icon: MailPlus, end: true },
   { to: '/company/vendors/bulk', label: 'Bulk Excel invite', icon: FileSpreadsheet, end: true },
   { to: '/company/sync', label: 'Sync data', icon: RefreshCw, end: true },
-  { to: '/company/form-builder', label: 'Form builder', icon: LayoutTemplate, end: true, soon: true },
+  { to: '/company/form-builder', label: 'Form builder', icon: LayoutTemplate, end: false },
   { to: '/company/profile', label: 'Profile', icon: UserRound, end: true },
   { to: '/company/password', label: 'Password', icon: KeyRound, end: true },
   { to: '/company/tally', label: 'Tally IP', icon: Network, end: true },
@@ -73,11 +73,6 @@ export function CompanyLayout() {
             >
               <link.icon className="h-4 w-4 shrink-0" />
               <span className="flex-1">{link.label}</span>
-              {link.soon ? (
-                <span className="rounded-full bg-navy-800 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-mist">
-                  Phase 4
-                </span>
-              ) : null}
             </NavLink>
           ))}
         </nav>

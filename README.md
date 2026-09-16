@@ -1,8 +1,8 @@
 # Vendor Management System
 
-Phase 3 of the Vendor Management System: company portal, vendor invitations, and profile/settings on top of Phase 1 auth and Phase 2 admin company-user management.
+Company portal and admin console for vendor management. Phase 4 adds a company-only Form Builder for custom vendor form templates.
 
-Phase 4 form builder, the 5-step vendor form, Business Central, and Tally posting are not included.
+The public 5-step vendor form, vendor submissions, email completion links, company review, Business Central, and Tally posting are not included.
 
 ## Local setup
 
@@ -10,7 +10,7 @@ Phase 4 form builder, the 5-step vendor form, Business Central, and Tally postin
 2. `cp .env.example .env.local` and set **public** values only:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
-3. Apply migrations in `supabase/migrations/` (Phase 1–3).
+3. Apply migrations in `supabase/migrations/` (Phase 1–4).
 4. Deploy Edge Functions:
    - `vms-admin` (Phase 2)
    - `vms-company` (Phase 3 invites)
@@ -29,7 +29,8 @@ Never put the Supabase **service-role** key in Vite or React.
 | `/company/vendors/bulk` | Bulk Excel invite |
 | `/company/vendors/:id` | Stored vendor details (no 5-step form) |
 | `/company/sync` | Refresh local vendor data (no BC) |
-| `/company/form-builder` | Phase 4 placeholder |
+| `/company/form-builder` | List, create, activate, and delete form templates |
+| `/company/form-builder/:id` | Drag-and-drop field editor and local preview |
 | `/company/profile` | Company profile |
 | `/company/password` | Change password |
 | `/company/tally` | Tally host/port settings only |
@@ -40,6 +41,7 @@ Never put the Supabase **service-role** key in Vite or React.
 - Company users cannot insert vendors from the browser. Invites go through `vms-company`, which hashes the invitation token (SHA-256) and never returns the raw token.
 - Duplicate vendor emails are unique per company (`lower(email)`).
 - Blocked company users (`is_active = false`) cannot read or update vendors.
+- Form templates and fields are owned by `company_user_id` forced from `auth.uid()`. Admins cannot read another company's templates. At most one template per company can be `is_active`.
 
 ## Email (optional)
 

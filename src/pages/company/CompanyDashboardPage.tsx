@@ -64,6 +64,12 @@ export function CompanyDashboardPage() {
             >
               Export vendors
             </Link>
+            <Link
+              to="/company/form-builder"
+              className="inline-flex h-11 items-center justify-center rounded-lg border border-line px-4 text-sm text-ivory hover:bg-navy-800"
+            >
+              Form builder
+            </Link>
           </div>
         }
       />
@@ -131,8 +137,8 @@ export function CompanyDashboardPage() {
               <div>
                 <h2 className="font-display text-lg text-ivory">Quick actions</h2>
                 <p className="mt-2 text-sm leading-6 text-mist">
-                  Invite one vendor, import several from Excel, or export the current directory. Form builder and
-                  Business Central sync stay reserved for later phases.
+                  Invite one vendor, import several from Excel, export the directory, or design a vendor form
+                  template. Public vendor forms, Business Central, and Tally posting stay reserved for later phases.
                 </p>
               </div>
             </CardContent>
