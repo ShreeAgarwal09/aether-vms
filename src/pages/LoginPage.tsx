@@ -36,8 +36,8 @@ export function LoginPage() {
     const destination =
       from?.startsWith('/admin') && profile.role === 'admin'
         ? from
-        : from === '/company' && profile.role === 'company'
-          ? '/company'
+        : from?.startsWith('/company') && profile.role === 'company'
+          ? from
           : home
     return <Navigate to={destination} replace />
   }

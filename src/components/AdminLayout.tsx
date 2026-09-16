@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { Building2, LayoutDashboard, LogOut, Menu, ShieldCheck, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -89,25 +89,4 @@ export function AdminLayout() {
   )
 }
 
-export function AdminPageHeader({
-  eyebrow,
-  title,
-  description,
-  action,
-}: {
-  eyebrow: string
-  title: string
-  description: string
-  action?: ReactNode
-}) {
-  return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-gold">{eyebrow}</p>
-        <h1 className="mt-2 font-display text-3xl text-ivory sm:text-4xl">{title}</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-mist">{description}</p>
-      </div>
-      {action}
-    </div>
-  )
-}
+export { PageHeader as AdminPageHeader } from '@/components/PageHeader'

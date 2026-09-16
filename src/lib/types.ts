@@ -15,3 +15,25 @@ export type Profile = {
 }
 
 export type CompanyUser = Profile
+
+export type VendorStatus = 'invited' | 'pending' | 'approved' | 'rejected' | 'blocked'
+
+export type Vendor = {
+  id: string
+  vendor_name: string | null
+  email: string
+  vendor_phone_number: string | null
+  status: VendorStatus
+  invited_at: string | null
+  created_at: string
+  updated_at?: string
+}
+
+export type IpConfig = {
+  id: string
+  company_user_id: string
+  tally_host: string | null
+  tally_port: number | null
+  is_enabled: boolean
+  notes: string | null
+}

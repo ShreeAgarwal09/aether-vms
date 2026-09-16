@@ -1,95 +1,59 @@
 # Vendor Management System
 
-Phase 2 of the Vendor Management System: Admin company-user management on top of the Phase 1 Auth and role foundation.
+Phase 3 of the Vendor Management System: company portal, vendor invitations, and profile/settings on top of Phase 1 auth and Phase 2 admin company-user management.
 
-Vendor invitations, vendor forms, Business Central, and Tally are not included yet.
+Phase 4 form builder, the 5-step vendor form, Business Central, and Tally posting are not included.
 
 ## Local setup
 
-1. Install dependencies:
+1. `npm install`
+2. `cp .env.example .env.local` and set **public** values only:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+3. Apply migrations in `supabase/migrations/` (Phase 1–3).
+4. Deploy Edge Functions:
+   - `vms-admin` (Phase 2)
+   - `vms-company` (Phase 3 invites)
+5. Create an Auth user and promote it to admin, then add company users from the Admin console.
+6. `npm run dev` — http://127.0.0.1:45217
 
-```bash
-npm install
-```
+Never put the Supabase **service-role** key in Vite or React.
 
-2. Copy environment variables:
+## Company routes
 
-```bash
-cp .env.example .env.local
-```
+| Path | Purpose |
+| --- | --- |
+| `/company` | Master dashboard and vendor stats |
+| `/company/vendors` | Vendor list, search, filters, Excel export |
+| `/company/vendors/invite` | Invite one vendor |
+| `/company/vendors/bulk` | Bulk Excel invite |
+| `/company/vendors/:id` | Stored vendor details (no 5-step form) |
+| `/company/sync` | Refresh local vendor data (no BC) |
+| `/company/form-builder` | Phase 4 placeholder |
+| `/company/profile` | Company profile |
+| `/company/password` | Change password |
+| `/company/tally` | Tally host/port settings only |
 
-3. Fill in **public** Supabase values only:
+## Security
 
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY` (anon or publishable key)
+- Vendors are owned by `company_user_id` (the company profile). RLS plus an insert trigger bind rows to `auth.uid()`.
+- Company users cannot insert vendors from the browser. Invites go through `vms-company`, which hashes the invitation token (SHA-256) and never returns the raw token.
+- Duplicate vendor emails are unique per company (`lower(email)`).
+- Blocked company users (`is_active = false`) cannot read or update vendors.
 
-Never put the Supabase **service-role** key in this app. It belongs only in Edge Functions / the Supabase dashboard.
+## Email (optional)
 
-4. Apply database migrations in order:
+Set these on the `vms-company` Edge Function (Supabase secrets), not in the frontend:
 
-- `supabase/migrations/20260827102832_profiles_phase_1.sql`
-- `supabase/migrations/20260916090000_phase2_company_management.sql`
-- `supabase/migrations/20260916091500_phase2_protect_profile_service_role.sql`
+- `RESEND_API_KEY`
+- `EMAIL_FROM`
+- `APP_BASE_URL` (optional; falls back to the request Origin)
 
-5. Deploy the `vms-admin` Edge Function (`supabase/functions/vms-admin`). Hosted projects already inject `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` into the function. Optional function secret:
-
-- `APP_BASE_URL` — public app origin used in password-email redirect links (falls back to the browser `Origin` header)
-
-6. Create the first Auth user in the Supabase dashboard, then promote it to admin:
-
-```sql
-update public.profiles
-set role = 'admin'
-where email = 'your-admin@example.com';
-```
-
-7. Start the app:
-
-```bash
-npm run dev
-```
-
-The dev server listens on `http://127.0.0.1:45217`.
+If they are missing, the vendor row is still created and the UI reports that mail is pending configuration.
 
 ## Scripts
 
-- `npm run dev` — development server
-- `npm run build` — typecheck and production build
-- `npm run preview` — serve the production build
-- `npm run lint` — oxlint
-
-## Routes
-
-| Path | Access |
-| --- | --- |
-| `/login` | Public sign-in |
-| `/admin` | Authenticated `admin` dashboard |
-| `/admin/companies` | Company user management |
-| `/company` | Authenticated `company` profiles |
-| `/unauthorized` | Signed-in users without that route's role |
-
-Inactive / blocked company profiles cannot enter `/company`. Blocking also bans the Auth user and revokes sessions.
-
-## Admin operations
-
-| Action | Where it runs |
-| --- | --- |
-| List / search / filter companies | Browser + RLS (`role = company`) |
-| Edit company profile fields | Browser + RLS + DB trigger (email/role/status locked for non-admins) |
-| Add company user | `vms-admin` Edge Function (`inviteUserByEmail`) |
-| Block / unblock | `vms-admin` Edge Function |
-| Delete company user | `vms-admin` Edge Function |
-| Send set-password email | `vms-admin` Edge Function (`resetPasswordForEmail`) |
-
-Deletion is a hard Auth delete (profile cascades). If vendor rows exist, delete is refused (`ON DELETE RESTRICT`); block the company instead.
-
-## Email
-
-Set-password and invite emails are sent by **Supabase Auth**, not by a frontend mailer.
-
-Configure in the Supabase dashboard:
-
-- Authentication → URL Configuration: add `http://127.0.0.1:45217/login` (and the production origin) to Redirect URLs
-- Authentication → SMTP: custom SMTP, or the project's built-in Auth email (rate-limited)
-
-If SMTP is missing, user creation can still succeed while mail delivery fails. The UI reports the Auth/SMTP error instead of faking success.
+- `npm run dev`
+- `npm run build`
+- `npm run preview`
+- `npm run lint`

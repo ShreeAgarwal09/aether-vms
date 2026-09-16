@@ -20,6 +20,7 @@ type AuthContextValue = {
   configured: boolean
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
+  refreshProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -147,6 +148,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null)
   }, [])
 
+  const refreshProfile = useCallback(async () => {
+    if (!session?.user) return
+    await hydrate(session)
+  }, [hydrate, session])
+
   const value = useMemo<AuthContextValue>(
     () => ({
       session,
@@ -157,8 +163,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       configured: isSupabaseConfigured,
       signIn,
       signOut,
+      refreshProfile,
     }),
-    [session, profile, loading, error, signIn, signOut],
+    [session, profile, loading, error, signIn, signOut, refreshProfile],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
