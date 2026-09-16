@@ -1,0 +1,8 @@
+-- Manual setup (run in the Supabase SQL editor after creating the first Auth user):
+--
+--   update public.profiles
+--   set role = 'admin'
+--   where email = 'your-admin@example.com';
+--
+-- New sign-ups receive role = 'company' via handle_new_user().
+-- Do not promote admins from the React client.
