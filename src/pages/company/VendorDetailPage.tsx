@@ -13,6 +13,7 @@ export function VendorDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
+  const [resending, setResending] = useState(false)
 
   useEffect(() => {
     if (!vendorId) return
@@ -33,8 +34,10 @@ export function VendorDetailPage() {
   }, [vendorId])
 
   async function resend() {
-    if (!vendor) return
+    if (!vendor || resending) return
+    setResending(true)
     const result = await resendVendorInvite(vendor.id)
+    setResending(false)
     setFeedback(result.error ?? result.message ?? 'Invitation processed.')
     if (result.inviteLink) setFeedback(`${result.message ?? 'Invitation updated.'} Link: ${result.inviteLink}`)
   }
@@ -92,8 +95,8 @@ export function VendorDetailPage() {
               </div>
             ) : null}
             <div className="sm:col-span-2">
-              <Button variant="outline" onClick={() => void resend()}>
-                Resend invitation email
+              <Button variant="outline" onClick={() => void resend()} disabled={resending}>
+                {resending ? 'Sending…' : 'Resend invitation email'}
               </Button>
             </div>
           </CardContent>

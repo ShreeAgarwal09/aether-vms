@@ -361,16 +361,16 @@ export function VendorReviewPage() {
             <div className="flex flex-wrap gap-2">
               {pending ? (
                 <Button variant="outline" disabled={busy} onClick={() => void onValidate()}>
-                  Validate for Business Central
+                  {busy ? 'Validating…' : 'Validate for Business Central'}
                 </Button>
               ) : null}
               {review.status === 'approved' ? (
                 <>
                   <Button variant="outline" disabled={busy} onClick={() => void onBcSync(false)}>
-                    Retry Business Central
+                    {busy ? 'Syncing…' : 'Retry Business Central'}
                   </Button>
                   <Button variant="outline" disabled={busy} onClick={() => void onTallySync()}>
-                    Sync to Tally
+                    {busy ? 'Syncing…' : 'Sync to Tally'}
                   </Button>
                 </>
               ) : null}
@@ -403,7 +403,7 @@ export function VendorReviewPage() {
                   Reject
                 </Button>
                 <Button disabled={busy} onClick={() => setApproveOpen(true)}>
-                  Approve vendor
+                  {busy ? 'Working…' : 'Approve vendor'}
                 </Button>
                 <Button disabled={busy} onClick={() => setSyncOpen(true)}>
                   Approve &amp; sync

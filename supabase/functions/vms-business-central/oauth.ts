@@ -18,7 +18,7 @@ export function oauthConfig() {
   const redirectUri = Deno.env.get('BC_REDIRECT_URI')
   const defaultTenant = Deno.env.get('BC_TENANT_ID') || 'common'
   if (!clientId || !clientSecret || !redirectUri) {
-    return { error: 'Business Central OAuth is not configured. Set BC_CLIENT_ID, BC_CLIENT_SECRET, and BC_REDIRECT_URI as Edge Function secrets.' }
+    return { error: 'Business Central OAuth is not configured on the server.' }
   }
   return { clientId, clientSecret, redirectUri, defaultTenant }
 }

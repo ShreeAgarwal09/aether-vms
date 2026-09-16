@@ -1,3 +1,4 @@
+import { userFacingError, MESSAGES } from '@/lib/errors'
 import { getSupabase } from '@/lib/supabase'
 import type { Vendor, VendorStatus } from '@/lib/types'
 
@@ -32,14 +33,17 @@ async function invokeCompany(body: Record<string, unknown>): Promise<InviteResul
     if (response && typeof response.json === 'function') {
       try {
         const parsed = (await response.json()) as FunctionResponse
-        return { error: parsed.error ?? error.message, message: parsed.message }
+        return {
+          error: userFacingError(parsed.error ?? error.message, MESSAGES.generic),
+          message: parsed.message,
+        }
       } catch {
-        return { error: error.message }
+        return { error: userFacingError(error.message, MESSAGES.generic) }
       }
     }
-    return { error: error.message }
+    return { error: userFacingError(error.message, MESSAGES.generic) }
   }
-  if (data?.error) return { error: data.error, message: data.message }
+  if (data?.error) return { error: userFacingError(data.error, MESSAGES.generic), message: data.message }
   return {
     error: null,
     message: data?.message,
@@ -93,36 +97,6 @@ export function inviteVendorsBulk(
 
 export function resendVendorInvite(vendorId: string) {
   return invokeCompany({ action: 'resend_invite', vendorId })
-}
-
-export function fetchIpConfig() {
-  return getSupabase()
-    .from('ip_configs')
-    .select('id, company_user_id, tally_host, tally_port, is_enabled, notes')
-    .maybeSingle()
-}
-
-export function upsertIpConfig(values: {
-  tally_host: string | null
-  tally_port: number | null
-  is_enabled: boolean
-  notes: string | null
-  company_user_id: string
-}) {
-  return getSupabase()
-    .from('ip_configs')
-    .upsert(
-      {
-        company_user_id: values.company_user_id,
-        tally_host: values.tally_host,
-        tally_port: values.tally_port,
-        is_enabled: values.is_enabled,
-        notes: values.notes,
-      },
-      { onConflict: 'company_user_id' },
-    )
-    .select('id, company_user_id, tally_host, tally_port, is_enabled, notes')
-    .single()
 }
 
 export async function saveCompanyProfile(

@@ -30,7 +30,6 @@ const statusLabel: Record<Connection['connection_status'], string> = {
 export function BusinessCentralPage() {
   const [loading, setLoading] = useState(true)
   const [configured, setConfigured] = useState(false)
-  const [missing, setMissing] = useState<string[]>([])
   const [connection, setConnection] = useState<Connection | null>(null)
   const [tenantId, setTenantId] = useState('')
   const [environment, setEnvironment] = useState('Production')
@@ -45,7 +44,6 @@ export function BusinessCentralPage() {
     setLoading(true)
     const result = await invokeBc({ action: 'get_connection_status' })
     setConfigured(Boolean(result.configured))
-    setMissing((result.missing as string[]) ?? [])
     const conn = result.connection as Connection
     setConnection(conn)
     if (conn?.tenant_id) setTenantId(conn.tenant_id)
@@ -126,8 +124,7 @@ export function BusinessCentralPage() {
           <CardContent className="space-y-3 p-6">
             <p className="text-ivory">Configuration required</p>
             <p className="text-sm leading-6 text-mist">
-              Set Edge Function secrets before connecting. Missing: {missing.join(', ') || 'BC_CLIENT_ID, BC_CLIENT_SECRET, BC_REDIRECT_URI'}.
-              This page will not pretend the connection succeeded.
+              Microsoft application credentials are not configured on the Edge Functions. Connect will stay disabled until an administrator sets the server secrets. This page will not pretend the connection succeeded.
             </p>
           </CardContent>
         </Card>
@@ -144,10 +141,10 @@ export function BusinessCentralPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               <Button disabled={busy || !configured} onClick={() => void connect()}>
-                Connect to Business Central
+                {busy ? 'Working…' : 'Connect to Business Central'}
               </Button>
               <Button variant="outline" disabled={busy || status === 'not_connected'} onClick={() => void test()}>
-                Test connection
+                {busy ? 'Working…' : 'Test connection'}
               </Button>
               <Button variant="outline" disabled={busy || status === 'not_connected'} onClick={() => setDisconnectOpen(true)}>
                 Disconnect

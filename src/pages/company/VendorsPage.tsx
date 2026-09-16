@@ -23,6 +23,7 @@ export function VendorsPage() {
   const [error, setError] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
+  const [resending, setResending] = useState<string | null>(null)
 
   async function load() {
     setLoading(true)
@@ -58,7 +59,10 @@ export function VendorsPage() {
   const searched = useMemo(() => query.trim().length > 0 || status !== 'all', [query, status])
 
   async function onResend(id: string) {
+    if (resending) return
+    setResending(id)
     const result = await resendVendorInvite(id)
+    setResending(null)
     setFeedback(result.error ?? result.message ?? 'Invitation processed.')
     await load()
   }
@@ -158,6 +162,7 @@ export function VendorsPage() {
                       <th className="pb-3 font-medium">Email</th>
                       <th className="pb-3 font-medium">Phone</th>
                       <th className="pb-3 font-medium">Status</th>
+                      <th className="pb-3 font-medium">Integrations</th>
                       <th className="pb-3 font-medium">Invited</th>
                       <th className="pb-3 font-medium">Created</th>
                       <th className="pb-3 font-medium">Actions</th>
@@ -178,6 +183,10 @@ export function VendorsPage() {
                               </p>
                             ) : null}
                           </div>
+                        </td>
+                        <td className="py-4 text-xs text-mist">
+                          <p>BC: {vendor.bc_sync_status || 'not_started'}</p>
+                          <p>Tally: {vendor.tally_sync_status || 'not_started'}</p>
                         </td>
                         <td className="py-4 text-mist">{formatDateTime(vendor.invited_at)}</td>
                         <td className="py-4 text-mist">{formatDateTime(vendor.created_at)}</td>
@@ -205,9 +214,9 @@ export function VendorsPage() {
                                 View submission
                               </Link>
                             ) : null}
-                            <Button size="sm" variant="outline" onClick={() => void onResend(vendor.id)}>
+                            <Button size="sm" variant="outline" disabled={resending === vendor.id} onClick={() => void onResend(vendor.id)}>
                               <Mail className="h-3.5 w-3.5" />
-                              Resend
+                              {resending === vendor.id ? 'Sending…' : 'Resend'}
                             </Button>
                           </div>
                         </td>
@@ -227,6 +236,9 @@ export function VendorsPage() {
                       <VendorStatusBadge status={vendor.status} />
                     </div>
                     <p className="mt-2 text-sm text-mist">{vendor.vendor_phone_number || 'No phone'}</p>
+                    <p className="mt-1 text-xs text-mist">
+                      BC {vendor.bc_sync_status || 'not_started'} · Tally {vendor.tally_sync_status || 'not_started'}
+                    </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Link
                         to={`/company/vendors/${vendor.id}`}
@@ -250,8 +262,8 @@ export function VendorsPage() {
                           View submission
                         </Link>
                       ) : null}
-                      <Button size="sm" variant="outline" onClick={() => void onResend(vendor.id)}>
-                        Resend
+                      <Button size="sm" variant="outline" disabled={resending === vendor.id} onClick={() => void onResend(vendor.id)}>
+                        {resending === vendor.id ? 'Sending…' : 'Resend'}
                       </Button>
                     </div>
                   </div>
@@ -307,6 +319,8 @@ async function exportRows(rows: ListedVendor[]) {
       Email: vendor.email,
       Phone: vendor.vendor_phone_number ?? '',
       Status: vendor.status,
+      'BC sync': vendor.bc_sync_status ?? '',
+      'Tally sync': vendor.tally_sync_status ?? '',
       'Invited at': vendor.invited_at ?? '',
       'Created at': vendor.created_at,
     })),

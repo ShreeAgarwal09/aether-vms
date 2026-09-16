@@ -291,3 +291,7 @@ export const STEP_TITLES = [
   'Company details',
   'Other details',
 ]
+
+export const ALLOWED_UPLOAD_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
+export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+

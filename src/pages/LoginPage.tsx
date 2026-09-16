@@ -58,8 +58,8 @@ export function LoginPage() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(201,162,39,0.14),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(72,110,160,0.18),transparent_40%)]" />
       <div className="relative mx-auto grid min-h-svh max-w-6xl items-center gap-12 px-6 py-12 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="hidden lg:block">
-          <p className="text-xs font-medium uppercase tracking-[0.24em] text-gold">Phase 1 foundation</p>
-          <h1 className="mt-4 max-w-xl font-display text-5xl leading-[1.05] text-ivory">
+      <p className="text-xs font-medium uppercase tracking-[0.24em] text-gold">Aether VMS</p>
+      <h1 className="mt-4 max-w-xl font-display text-5xl leading-[1.05] text-ivory">
             A controlled workspace for vendor onboarding.
           </h1>
           <p className="mt-5 max-w-lg text-base leading-7 text-mist">

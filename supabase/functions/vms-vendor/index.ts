@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
       if (!count) return json({ error: 'Cancelled cheque is required.' }, 400)
     }
     const persistError = await persistForm(service, fresh, form, currentStep)
-    if (persistError) return json({ error: persistError }, 400)
+    if (persistError) return json({ error: 'Could not save this step. Check the highlighted fields and try again.' }, 400)
     if (submit) {
       const wasRejected = fresh.status === 'rejected'
       const now = new Date().toISOString()

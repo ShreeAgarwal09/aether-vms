@@ -92,7 +92,7 @@ export async function getStatus(service: SupabaseClient, callerId: string) {
     .eq('company_user_id', callerId).eq('integration_type', 'business_central')
   return json({
     configured,
-    missing: configured ? [] : ['BC_CLIENT_ID', 'BC_CLIENT_SECRET', 'BC_REDIRECT_URI'].filter((key) => !Deno.env.get(key)),
+    missing: [],
     connection: conn ?? {
       connection_status: 'not_connected',
       tenant_id: null,

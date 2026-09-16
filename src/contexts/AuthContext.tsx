@@ -119,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
 
     if (signInError) {
-      return { error: signInError.message }
+      return { error: 'Invalid email or password.' }
     }
 
     if (!data.session?.user) {

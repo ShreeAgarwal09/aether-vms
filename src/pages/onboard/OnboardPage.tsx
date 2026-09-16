@@ -9,9 +9,11 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import {
   ACCOUNT_TYPES,
+  ALLOWED_UPLOAD_TYPES,
   emptyContact,
   emptyGstLocation,
   GST_TYPES,
+  MAX_UPLOAD_BYTES,
   STEP_TITLES,
   validateStep,
   VENDOR_TYPES,
@@ -126,10 +128,11 @@ export function OnboardPage() {
     if (!form.cancelled_cheque) all.cancelled_cheque = 'Upload a cancelled cheque.'
     setErrors(all)
     if (Object.keys(all).length) {
-      setBanner('Review the highlighted fields before submitting.')
+      setBanner('Vendor validation failed. Please review the highlighted fields.')
       setReview(false)
       return
     }
+    if (saveState === 'saving') return
     setSaveState('saving')
     const result = await vendorOnboard({ action: 'submit_vendor', token, step: 5, form })
     if (result.error) {
@@ -144,6 +147,14 @@ export function OnboardPage() {
   async function onFile(kind: string, fileList: FileList | null) {
     const file = fileList?.[0]
     if (!file || !form) return
+    if (!ALLOWED_UPLOAD_TYPES.includes(file.type)) {
+      setBanner('Allowed types: PDF, JPEG, PNG, WebP.')
+      return
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setBanner('File must be 10 MB or smaller.')
+      return
+    }
     setUploading(kind)
     const result = await uploadVendorDocument(token, kind, file)
     setUploading(null)
@@ -229,10 +240,12 @@ export function OnboardPage() {
               </p>
               <Summary form={form} />
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" onClick={() => setReview(false)}>
+                <Button variant="outline" onClick={() => setReview(false)} disabled={saveState === 'saving'}>
                   Back to edit
                 </Button>
-                <Button onClick={() => void submit()}>Submit for review</Button>
+                <Button onClick={() => void submit()} disabled={saveState === 'saving'}>
+                  {saveState === 'saving' ? 'Submitting…' : 'Submit for review'}
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -249,10 +262,12 @@ export function OnboardPage() {
                 <StepOther form={form} errors={errors} fields={fields} patch={patch} uploading={uploading} onFile={onFile} />
               ) : null}
               <div className="flex flex-wrap justify-between gap-2">
-                <Button variant="outline" disabled={step === 1} onClick={() => setStep((value) => Math.max(1, value - 1))}>
+                <Button variant="outline" disabled={step === 1 || saveState === 'saving'} onClick={() => setStep((value) => Math.max(1, value - 1))}>
                   Back
                 </Button>
-                <Button onClick={() => void goNext()}>{step === 5 ? 'Review' : 'Next'}</Button>
+                <Button onClick={() => void goNext()} disabled={saveState === 'saving'}>
+                  {saveState === 'saving' ? 'Saving…' : step === 5 ? 'Review' : 'Next'}
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -501,7 +516,7 @@ function StepBank({
             ? 'Uploading…'
             : form.cancelled_cheque
               ? `Uploaded: ${form.cancelled_cheque.filename}`
-              : 'PDF or image, 8 MB max. Stored privately.'}
+              : 'PDF or image, 10 MB max. Stored privately.'}
         </p>
         <FieldError message={errors.cancelled_cheque} />
       </div>
@@ -663,10 +678,11 @@ function LabeledInput({
   error?: string
   onChange: (value: string) => void
 }) {
+  const id = label.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase()
   return (
     <div className="space-y-2">
-      <Label>{label}</Label>
-      <Input value={value} onChange={(event) => onChange(event.target.value)} />
+      <Label htmlFor={id}>{label}</Label>
+      <Input id={id} value={value} onChange={(event) => onChange(event.target.value)} />
       <FieldError message={error} />
     </div>
   )

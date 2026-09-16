@@ -21,10 +21,12 @@ export function TallyIntegrationPage() {
   const [vendorId, setVendorId] = useState('')
   const [logs, setLogs] = useState<Array<Record<string, string>>>([])
   const [pending, setPending] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  async function load() {
+  async function load(initial = false) {
+    if (initial) setLoading(true)
     const result = await invokeTally({ action: 'get_status' })
     const config = result.config as Record<string, unknown> | null
     if (config) {
@@ -40,10 +42,11 @@ export function TallyIntegrationPage() {
     }
     const logResult = await invokeTally({ action: 'list_logs' })
     setLogs((logResult.logs as Array<Record<string, string>>) ?? [])
+    setLoading(false)
   }
 
   useEffect(() => {
-    void load()
+    void load(true)
   }, [])
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -107,6 +110,7 @@ export function TallyIntegrationPage() {
         title="Tally"
         description="Generate Tally XML on the server and POST it to the configured HTTP listener. Hosted Edge Functions cannot reach private LAN IPs; a failed test is reported honestly."
       />
+      {loading ? <div className="h-40 animate-pulse rounded-2xl bg-navy-800/80" /> : null}
       <Card className="max-w-xl">
         <CardContent className="p-6">
           <form className="space-y-4" onSubmit={(event) => void onSubmit(event)}>

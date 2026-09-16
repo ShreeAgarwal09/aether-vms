@@ -51,7 +51,7 @@ export function sanitizeExternalError(text: string, status?: number) {
   if (/consent/i.test(raw)) return { code: 'consent_denied', message: 'Microsoft Entra consent was denied.' }
   if (/AADSTS700016|tenant/i.test(raw)) return { code: 'invalid_tenant', message: 'The Microsoft tenant ID is invalid or the app is not available in that tenant.' }
   if (/environment/i.test(raw) && status === 404) return { code: 'invalid_environment', message: 'The Business Central environment name was not found.' }
-  return { code: 'api_unavailable', message: raw || 'Business Central request failed.' }
+  return { code: 'api_unavailable', message: 'Unable to connect to Business Central. Please check the integration configuration.' }
 }
 
 export async function logSync(

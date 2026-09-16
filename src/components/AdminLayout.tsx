@@ -32,7 +32,7 @@ export function AdminLayout() {
               <p className="text-sm text-ivory">Admin console</p>
             </div>
           </div>
-          <button type="button" className="text-mist lg:hidden" onClick={() => setOpen(false)}>
+          <button type="button" className="text-mist lg:hidden" aria-label="Close navigation" onClick={() => setOpen(false)}>
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -74,7 +74,7 @@ export function AdminLayout() {
       ) : null}
       <div className="min-h-svh">
         <header className="sticky top-0 z-20 flex items-center justify-between border-b border-line bg-navy-950/90 px-4 py-4 backdrop-blur sm:px-6 lg:px-8">
-          <button type="button" className="text-ivory lg:hidden" onClick={() => setOpen(true)}>
+          <button type="button" className="text-ivory lg:hidden" aria-label="Open navigation" onClick={() => setOpen(true)}>
             <Menu className="h-5 w-5" />
           </button>
           <p className="hidden text-sm text-mist lg:block">Company user management</p>

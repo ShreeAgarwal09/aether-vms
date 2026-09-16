@@ -1,0 +1,14 @@
+[functions.vms-admin]
+verify_jwt = true
+
+[functions.vms-company]
+verify_jwt = true
+
+[functions.vms-vendor]
+verify_jwt = false
+
+[functions.vms-business-central]
+verify_jwt = true
+
+[functions.vms-tally]
+verify_jwt = true

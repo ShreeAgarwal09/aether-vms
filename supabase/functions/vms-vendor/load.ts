@@ -16,7 +16,7 @@ export const IFSC_RE = /^[A-Z]{4}0[A-Z0-9]{6}$/
 export const AADHAAR_RE = /^[2-9][0-9]{11}$/
 export const TOKEN_RE = /^[a-f0-9]{64}$/
 export const ALLOWED_MIME = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
-export const MAX_FILE = 8 * 1024 * 1024
+export const MAX_FILE = 10 * 1024 * 1024
 export const INVITE_WINDOW_MS = 10 * 60 * 1000
 export const MAX_HITS = 40
 

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -12,6 +12,15 @@ type DialogProps = {
 }
 
 export function Dialog({ open, title, description, onClose, children, className }: DialogProps) {
+  useEffect(() => {
+    if (!open) return
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open, onClose])
+
   if (!open) return null
 
   return (
@@ -27,7 +36,7 @@ export function Dialog({ open, title, description, onClose, children, className 
         aria-modal="true"
         aria-labelledby="dialog-title"
         className={cn(
-          'relative z-10 w-full max-w-lg rounded-2xl border border-line bg-navy-900 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.45)]',
+          'relative z-10 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-line bg-navy-900 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.45)]',
           className,
         )}
       >
@@ -63,7 +72,7 @@ export function ConfirmDialog({
   onConfirm,
 }: ConfirmDialogProps) {
   return (
-    <Dialog open={open} title={title} description={description} onClose={onClose}>
+    <Dialog open={open} title={title} description={description} onClose={pending ? () => undefined : onClose}>
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <Button variant="outline" onClick={onClose} disabled={pending}>
           Cancel

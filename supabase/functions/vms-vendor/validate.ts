@@ -216,7 +216,7 @@ export async function persistForm(
 export async function handleUpload(service: SupabaseClient, vendor: Record<string, unknown>, kind: string, file: File) {
   if (!['cancelled_cheque', 'supporting_document'].includes(kind)) return json({ error: 'Unsupported document type.' }, 400)
   if (!ALLOWED_MIME.includes(file.type)) return json({ error: 'Allowed types: PDF, JPEG, PNG, WebP.' }, 400)
-  if (file.size > MAX_FILE) return json({ error: 'File must be 8 MB or smaller.' }, 400)
+  if (file.size > MAX_FILE) return json({ error: 'File must be 10 MB or smaller.' }, 400)
   const ext = file.type === 'application/pdf' ? 'pdf' : file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg'
   const path = `${vendor.id}/${crypto.randomUUID()}.${ext}`
   const bytes = new Uint8Array(await file.arrayBuffer())

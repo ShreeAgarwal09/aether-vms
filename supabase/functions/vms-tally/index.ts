@@ -45,6 +45,22 @@ async function loadConfig(service: SupabaseClient, callerId: string) {
   return data
 }
 
+function isBlockedTallyHost(host: string) {
+  const trimmed = host.replace(/^https?:\/\//i, '').split('/')[0].split('@').pop() ?? ''
+  const hostname = trimmed.split(':')[0].toLowerCase()
+  if (!hostname || hostname.length > 253) return true
+  if (hostname === '169.254.169.254' || hostname.endsWith('.internal') || hostname === 'metadata.google.internal') {
+    return true
+  }
+  const ipv4 = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
+  if (ipv4) {
+    const parts = ipv4.slice(1).map(Number)
+    if (parts[0] === 169 && parts[1] === 254) return true
+    if (parts[0] === 0) return true
+  }
+  return false
+}
+
 function tallyUrl(host: string, port: number) {
   const trimmed = host.replace(/\/$/, '')
   if (/^https?:\/\//i.test(trimmed)) return `${trimmed}:${port}`
@@ -122,6 +138,9 @@ Deno.serve(async (req) => {
     if (enabled && (!host || !Number.isInteger(port) || port < 1 || port > 65535)) {
       return json({ error: 'Enabled Tally configuration requires a host and a valid port.' }, 400)
     }
+    if (host && isBlockedTallyHost(host)) {
+      return json({ error: 'That host cannot be used for Tally.' }, 400)
+    }
     const row = {
       company_user_id: caller.id,
       tally_host: host || null,
@@ -132,7 +151,7 @@ Deno.serve(async (req) => {
       connection_status: enabled ? 'unknown' : 'disabled',
     }
     const { error } = await service.from('ip_configs').upsert(row, { onConflict: 'company_user_id' })
-    if (error) return json({ error: error.message }, 400)
+    if (error) return json({ error: 'Could not save Tally settings.' }, 400)
     return json({ success: true, message: 'Tally settings saved. This does not test connectivity.' })
   }
 
@@ -155,8 +174,8 @@ Deno.serve(async (req) => {
         error_code: 'api_unavailable',
         error_message: 'Could not reach the Tally endpoint.',
       })
-      return json({
-        error: 'Could not reach Tally. Confirm the HTTP/XML listener is on and reachable from this server (private IPs are not reachable from hosted Edge Functions).',
+        return json({
+        error: 'Tally is unreachable. Check that Tally is running and the configured host/port are reachable.',
         code: 'api_unavailable',
       }, 400)
     }
@@ -184,6 +203,25 @@ Deno.serve(async (req) => {
     }
     const { data: contacts } = await service.from('vendor_contact_persons').select('contact_person_name, contact_person_email, contact_person_mobile, is_primary').eq('vendor_id', vendor.id)
     const primary = (contacts ?? []).find((row) => row.is_primary) || contacts?.[0]
+    const previewVendor = {
+      name: String(vendor.vendor_name || vendor.email),
+      mailingName: vendor.legal_name || vendor.vendor_name,
+      address: vendor.registered_address || vendor.address_line1,
+      city: vendor.city,
+      state: vendor.state,
+      country: vendor.country || 'India',
+      pin: vendor.pincode,
+      gstin: vendor.gst_number,
+      gstType: vendor.gst_registration_type,
+      pan: vendor.pan_card_number ? `${String(vendor.pan_card_number).slice(0, 2)}XXXXXX${String(vendor.pan_card_number).slice(-2)}` : undefined,
+      email: vendor.email,
+      phone: vendor.vendor_phone_number,
+      contact: primary?.contact_person_name,
+      bankName: vendor.bank_name,
+      ifsc: vendor.vendor_bank_ifsc_code,
+      accountNumber: maskAccount(vendor.vendor_account_number) ?? undefined,
+      companyName: config?.tally_company_name,
+    }
     const xml = buildVendorLedgerXml({
       name: String(vendor.vendor_name || vendor.email),
       mailingName: vendor.legal_name || vendor.vendor_name,
@@ -205,11 +243,11 @@ Deno.serve(async (req) => {
     })
     if (action === 'generate_xml' || action === 'generate_vendor_xml') {
       return json({
-        xml,
+        xml: buildVendorLedgerXml(previewVendor),
         preview: {
           name: vendor.vendor_name,
           gstin: vendor.gst_number,
-          pan: vendor.pan_card_number ? `${String(vendor.pan_card_number).slice(0, 2)}XXXXXX${String(vendor.pan_card_number).slice(-2)}` : null,
+          pan: previewVendor.pan ?? null,
           account: maskAccount(vendor.vendor_account_number),
         },
       })
@@ -230,7 +268,7 @@ Deno.serve(async (req) => {
     }).eq('id', vendor.id)
     const posted = await postXml(config.tally_host, config.tally_port, xml)
     if (!posted.ok || tallyFailed(posted.text)) {
-      const message = posted.ok ? 'Tally returned an import error.' : 'Could not reach Tally.'
+      const message = posted.ok ? 'Tally returned an import error.' : 'Tally is unreachable. Check that Tally is running and the configured host/port are reachable.'
       await service.from('vendors').update({
         tally_sync_status: 'failed',
         tally_last_error: message,
