@@ -277,6 +277,11 @@ export function validateStep(
           errors[`custom_${field.field_key}`] = `Choose a valid option for ${label}.`
         }
       }
+      if (field.field_type === 'datetime' && typeof value === 'string') {
+        if (Number.isNaN(Date.parse(value))) {
+          errors[`custom_${field.field_key}`] = `${label} must be a valid date.`
+        }
+      }
     }
   }
 

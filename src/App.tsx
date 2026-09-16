@@ -61,6 +61,7 @@ export default function App() {
             <Route path="vendors/:vendorId/review" element={<VendorReviewPage />} />
             <Route path="vendors/:vendorId" element={<VendorDetailPage />} />
             <Route path="sync" element={<SyncDataPage />} />
+            <Route path="sync-data" element={<Navigate to="/company/sync" replace />} />
             <Route path="form-builder" element={<FormBuilderPage />} />
             <Route path="form-builder/:templateId" element={<FormBuilderEditorPage />} />
             <Route path="integrations/business-central" element={<BusinessCentralPage />} />

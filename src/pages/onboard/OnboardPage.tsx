@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useParams } from 'react-router-dom'
 import { DynamicFields } from '@/components/form-builder/DynamicFields'
 import { ScreenState } from '@/components/ScreenState'
@@ -42,6 +42,7 @@ export function OnboardPage() {
   const [banner, setBanner] = useState<string | null>(null)
   const [uploading, setUploading] = useState<string | null>(null)
   const [review, setReview] = useState(false)
+  const submitLock = useRef(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -100,7 +101,7 @@ export function OnboardPage() {
   }
 
   async function goNext() {
-    if (!form) return
+    if (!form || saveState === 'saving') return
     const nextErrors = validateStep(step, form, fields, 'progress')
     if (step === 3 && !form.cancelled_cheque) nextErrors.cancelled_cheque = 'Upload a cancelled cheque.'
     setErrors(nextErrors)
@@ -108,7 +109,11 @@ export function OnboardPage() {
       setBanner(Object.values(nextErrors)[0])
       return
     }
-    await persist(form, step)
+    const result = await persist(form, step)
+    if (result?.error) {
+      setBanner(result.error)
+      return
+    }
     if (step === 5) {
       setReview(true)
       return
@@ -117,7 +122,7 @@ export function OnboardPage() {
   }
 
   async function submit() {
-    if (!form) return
+    if (!form || submitLock.current) return
     const all = {
       ...validateStep(1, form, fields, 'submit'),
       ...validateStep(2, form, fields, 'submit'),
@@ -132,9 +137,10 @@ export function OnboardPage() {
       setReview(false)
       return
     }
-    if (saveState === 'saving') return
+    submitLock.current = true
     setSaveState('saving')
     const result = await vendorOnboard({ action: 'submit_vendor', token, step: 5, form })
+    submitLock.current = false
     if (result.error) {
       setSaveState('failed')
       setBanner(result.error)

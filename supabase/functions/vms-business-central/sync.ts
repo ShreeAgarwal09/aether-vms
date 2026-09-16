@@ -179,7 +179,7 @@ export async function syncVendorToBc(
   const cfgMissing = !Deno.env.get('BC_CLIENT_ID') || !Deno.env.get('BC_CLIENT_SECRET') || !Deno.env.get('BC_REDIRECT_URI')
   if (cfgMissing) {
     return json({
-      error: 'Business Central OAuth secrets are not configured.',
+      error: 'Unable to connect to Business Central. Please check the integration configuration.',
       code: 'oauth_failed',
       configured: false,
     }, 503)
@@ -188,6 +188,12 @@ export async function syncVendorToBc(
   if (!vendor || vendor.company_user_id !== callerId) return json({ error: 'Vendor not found.' }, 404)
   if (vendor.status !== 'pending' && vendor.status !== 'approved') {
     return json({ error: 'Only pending or approved vendors can sync to Business Central.' }, 409)
+  }
+  if (!vendor.submitted_at) {
+    return json({ error: 'This vendor has not submitted onboarding.', code: 'validation_failed' }, 400)
+  }
+  if (!vendor.vendor_name) {
+    return json({ error: 'Vendor validation failed. Please review the highlighted fields.', code: 'validation_failed' }, 400)
   }
 
   await service.from('vendors').update({

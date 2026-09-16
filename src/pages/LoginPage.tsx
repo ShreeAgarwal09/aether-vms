@@ -44,6 +44,7 @@ export function LoginPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (submitting) return
     setFormError(null)
     setSubmitting(true)
     const result = await signIn(email, password)

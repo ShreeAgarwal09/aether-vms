@@ -60,7 +60,12 @@ export function validateCustom(fields: SnapshotField[], custom: Record<string, u
       const allowed = (field.options ?? []).map((option) => option.value)
       if (typeof value !== 'string' || !allowed.includes(value)) errors.push(`${field.label} has an invalid option.`)
     }
-    if (field.field_type === 'checkbox' && typeof value !== 'boolean') errors.push(`${field.label} is invalid.`)
+      if (field.field_type === 'checkbox' && typeof value !== 'boolean') errors.push(`${field.label} is invalid.`)
+    if (field.field_type === 'datetime') {
+      if (typeof value !== 'string' || Number.isNaN(Date.parse(value))) {
+        errors.push(`${field.label} must be a valid date.`)
+      }
+    }
   }
   const allowedKeys = new Set(fields.map((field) => field.field_key))
   for (const key of Object.keys(custom)) {

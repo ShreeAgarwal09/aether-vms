@@ -20,6 +20,7 @@ export function InviteVendorPage() {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (pending) return
     const nextErrors = validateVendorInvite({
       vendor_name: vendorName,
       email,

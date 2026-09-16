@@ -126,7 +126,7 @@ export function FormBuilderEditorPage() {
   }
 
   async function onSave() {
-    if (!template || !templateId) return
+    if (!template || !templateId || saving) return
     const trimmed = name.trim()
     if (!trimmed) {
       setFeedback('Template name is required.')
@@ -164,7 +164,7 @@ export function FormBuilderEditorPage() {
   }
 
   async function toggleActive() {
-    if (!template) return
+    if (!template || saving) return
     if (dirty) {
       setFeedback('Save your changes before activating or deactivating this template.')
       return

@@ -153,7 +153,7 @@ export async function persistInvite(
       })
       .eq('id', existingId)
       .eq('company_user_id', callerId)
-    if (error) return { error: error.message }
+    if (error) return { error: 'Could not update the invitation.' }
   } else {
     const { error } = await service.from('vendors').insert({
       company_user_id: callerId,
@@ -167,7 +167,7 @@ export async function persistInvite(
     })
     if (error) {
       if (error.code === '23505') return { error: `A vendor with email ${vendor.email} already exists.` }
-      return { error: error.message }
+      return { error: 'Could not create the vendor invitation.' }
     }
   }
 

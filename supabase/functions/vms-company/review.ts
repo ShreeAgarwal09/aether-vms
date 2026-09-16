@@ -122,9 +122,14 @@ export async function handleGetReview(
     service.from('vendor_documents').select(
       'id, document_type, original_filename, mime_type, file_size',
     ).eq('vendor_id', vendor.id),
-    service.from('vendor_review_history').select('id, action, reason, created_at').eq('vendor_id', vendor.id).order('created_at', { ascending: false }),
+    service.from('vendor_review_history').select('id, action, reason, created_at, company_user_id').eq('vendor_id', vendor.id).order('created_at', { ascending: false }),
   ])
 
+  const reviewerIds = [...new Set((history ?? []).map((row: { company_user_id?: string | null }) => row.company_user_id).filter(Boolean))] as string[]
+  const { data: reviewers } = reviewerIds.length
+    ? await service.from('profiles').select('id, email, full_name').in('id', reviewerIds)
+    : { data: [] as Array<{ id: string; email: string; full_name: string | null }> }
+  const reviewerMap = new Map((reviewers ?? []).map((row) => [row.id, row.full_name || row.email]))
   const snapshot = vendor.form_snapshot as { template_name?: string; version?: number; fields?: SnapshotField[] } | null
   const custom = (vendor.dynamic_field_data as Record<string, unknown>) ?? {}
   const account = String(vendor.vendor_account_number ?? '')
@@ -198,7 +203,13 @@ export async function handleGetReview(
       },
       custom_fields: formatCustom(snapshotFields(vendor), custom),
       documents: docs ?? [],
-      history: history ?? [],
+      history: (history ?? []).map((row: Record<string, unknown>) => ({
+        id: row.id,
+        action: row.action,
+        reason: row.reason,
+        created_at: row.created_at,
+        reviewer: row.company_user_id ? reviewerMap.get(String(row.company_user_id)) ?? 'Company reviewer' : 'Vendor',
+      })),
       integration: {
         bc_sync_status: vendor.bc_sync_status ?? 'not_started',
         bc_vendor_id: vendor.bc_vendor_id ?? null,

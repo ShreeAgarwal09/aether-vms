@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { userFacingError, MESSAGES } from '@/lib/errors'
 import { getSupabase } from '@/lib/supabase'
 
 export function CompanyPasswordPage() {
@@ -15,6 +16,7 @@ export function CompanyPasswordPage() {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (pending) return
     setError(null)
     setSuccess(null)
     if (password.length < 8) {
@@ -29,7 +31,7 @@ export function CompanyPasswordPage() {
     const { error: updateError } = await getSupabase().auth.updateUser({ password })
     setPending(false)
     if (updateError) {
-      setError(updateError.message)
+      setError(userFacingError(updateError.message, MESSAGES.generic))
       return
     }
     setPassword('')

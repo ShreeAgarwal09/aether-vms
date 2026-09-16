@@ -1,4 +1,5 @@
 import { getSupabase } from '@/lib/supabase'
+import { MESSAGES, userFacingError } from '@/lib/errors'
 import type { VendorStatus } from '@/lib/types'
 
 export type ReviewField = {
@@ -23,6 +24,7 @@ export type ReviewHistoryItem = {
   action: 'submitted' | 'approved' | 'rejected' | 'resubmitted'
   reason: string | null
   created_at: string
+  reviewer?: string | null
 }
 
 export type VendorReview = {
@@ -128,13 +130,16 @@ async function invokeCompany(body: Record<string, unknown>): Promise<FunctionRes
     const response = (error as { context?: Response }).context
     if (response && typeof response.json === 'function') {
       try {
-        return (await response.json()) as FunctionResponse
+        const parsed = (await response.json()) as FunctionResponse
+        if (parsed.error) parsed.error = userFacingError(parsed.error, MESSAGES.generic)
+        return parsed
       } catch {
-        return { error: error.message }
+        return { error: userFacingError(error.message, MESSAGES.generic) }
       }
     }
-    return { error: error.message }
+    return { error: userFacingError(error.message, MESSAGES.generic) }
   }
+  if (data?.error) data.error = userFacingError(data.error, MESSAGES.generic)
   return data ?? {}
 }
 

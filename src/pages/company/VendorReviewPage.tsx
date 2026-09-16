@@ -386,7 +386,10 @@ export function VendorReviewPage() {
                 {review.history.map((item) => (
                   <li key={item.id} className="rounded-xl border border-line px-4 py-3">
                     <p className="text-sm capitalize text-ivory">{item.action}</p>
-                    <p className="text-xs text-mist">{formatDateTime(item.created_at)}</p>
+                    <p className="text-xs text-mist">
+                      {formatDateTime(item.created_at)}
+                      {item.reviewer ? ` · ${item.reviewer}` : ''}
+                    </p>
                     {item.reason ? <p className="mt-2 text-sm text-mist">{item.reason}</p> : null}
                   </li>
                 ))}

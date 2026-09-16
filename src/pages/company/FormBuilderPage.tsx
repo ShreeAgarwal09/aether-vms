@@ -244,6 +244,7 @@ function CreateTemplateDialog({
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (pending) return
     const trimmed = name.trim()
     if (!trimmed) {
       setError('Template name is required.')

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   Building2,
   FileSpreadsheet,
@@ -36,6 +36,18 @@ const links = [
 export function CompanyLayout() {
   const { profile, signOut } = useAuth()
   const [open, setOpen] = useState(false)
+  const location = useLocation()
+
+  function linkActive(to: string, end: boolean | undefined, isActive: boolean) {
+    if (to === '/company/vendors') {
+      return (
+        location.pathname === '/company/vendors' ||
+        /^\/company\/vendors\/(?!invite$|bulk$).+/.test(location.pathname)
+      )
+    }
+    void end
+    return isActive
+  }
 
   return (
     <div className="min-h-svh lg:grid lg:grid-cols-[260px_1fr]">
@@ -69,7 +81,7 @@ export function CompanyLayout() {
               className={({ isActive }) =>
                 cn(
                   'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors',
-                  isActive ? 'bg-gold/15 text-gold' : 'text-mist hover:bg-navy-800 hover:text-ivory',
+                  linkActive(link.to, link.end, isActive) ? 'bg-gold/15 text-gold' : 'text-mist hover:bg-navy-800 hover:text-ivory',
                 )
               }
             >
