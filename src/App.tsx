@@ -5,7 +5,11 @@ import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { AdminOverviewPage } from '@/pages/admin/AdminOverviewPage'
 import { CompaniesPage } from '@/pages/admin/CompaniesPage'
+import { BcMasterDataPage } from '@/pages/company/BcMasterDataPage'
+import { BcOAuthCallbackPage } from '@/pages/company/BcOAuthCallbackPage'
+import { BcVendorTemplatesPage } from '@/pages/company/BcVendorTemplatesPage'
 import { BulkInvitePage } from '@/pages/company/BulkInvitePage'
+import { BusinessCentralPage } from '@/pages/company/BusinessCentralPage'
 import { CompanyDashboardPage } from '@/pages/company/CompanyDashboardPage'
 import { CompanyPasswordPage } from '@/pages/company/CompanyPasswordPage'
 import { CompanyProfilePage } from '@/pages/company/CompanyProfilePage'
@@ -13,7 +17,7 @@ import { FormBuilderEditorPage } from '@/pages/company/FormBuilderEditorPage'
 import { FormBuilderPage } from '@/pages/company/FormBuilderPage'
 import { InviteVendorPage } from '@/pages/company/InviteVendorPage'
 import { SyncDataPage } from '@/pages/company/SyncDataPage'
-import { TallyIpPage } from '@/pages/company/TallyIpPage'
+import { TallyIntegrationPage } from '@/pages/company/TallyIntegrationPage'
 import { VendorDetailPage } from '@/pages/company/VendorDetailPage'
 import { VendorReviewPage } from '@/pages/company/VendorReviewPage'
 import { VendorsPage } from '@/pages/company/VendorsPage'
@@ -59,9 +63,14 @@ export default function App() {
             <Route path="sync" element={<SyncDataPage />} />
             <Route path="form-builder" element={<FormBuilderPage />} />
             <Route path="form-builder/:templateId" element={<FormBuilderEditorPage />} />
+            <Route path="integrations/business-central" element={<BusinessCentralPage />} />
+            <Route path="integrations/business-central/oauth-callback" element={<BcOAuthCallbackPage />} />
+            <Route path="integrations/business-central/master-data" element={<BcMasterDataPage />} />
+            <Route path="integrations/business-central/vendor-templates" element={<BcVendorTemplatesPage />} />
+            <Route path="integrations/tally" element={<TallyIntegrationPage />} />
             <Route path="profile" element={<CompanyProfilePage />} />
             <Route path="password" element={<CompanyPasswordPage />} />
-            <Route path="tally" element={<TallyIpPage />} />
+            <Route path="tally" element={<Navigate to="/company/integrations/tally" replace />} />
           </Route>
           <Route path="/onboard/:token" element={<OnboardPage />} />
           <Route path="/home" element={<Navigate to="/" replace />} />

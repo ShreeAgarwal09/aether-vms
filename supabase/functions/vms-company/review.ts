@@ -199,6 +199,20 @@ export async function handleGetReview(
       custom_fields: formatCustom(snapshotFields(vendor), custom),
       documents: docs ?? [],
       history: history ?? [],
+      integration: {
+        bc_sync_status: vendor.bc_sync_status ?? 'not_started',
+        bc_vendor_id: vendor.bc_vendor_id ?? null,
+        bc_vendor_number: vendor.bc_vendor_number ?? null,
+        bc_last_synced_at: vendor.bc_last_synced_at ?? null,
+        bc_last_error: vendor.bc_last_error ?? null,
+        bc_contact_sync_status: vendor.bc_contact_sync_status ?? 'not_started',
+        bc_gst_sync_status: vendor.bc_gst_sync_status ?? 'not_started',
+        bc_bank_sync_status: vendor.bc_bank_sync_status ?? 'not_started',
+        bc_document_sync_status: vendor.bc_document_sync_status ?? 'not_started',
+        tally_sync_status: vendor.tally_sync_status ?? 'not_started',
+        tally_last_synced_at: vendor.tally_last_synced_at ?? null,
+        tally_last_error: vendor.tally_last_error ?? null,
+      },
     },
   })
 }

@@ -10,6 +10,7 @@ import {
   MailPlus,
   Menu,
   Network,
+  Plug,
   RefreshCw,
   ShieldCheck,
   UserRound,
@@ -26,9 +27,10 @@ const links = [
   { to: '/company/vendors/bulk', label: 'Bulk Excel invite', icon: FileSpreadsheet, end: true },
   { to: '/company/sync', label: 'Sync data', icon: RefreshCw, end: true },
   { to: '/company/form-builder', label: 'Form builder', icon: LayoutTemplate, end: false },
+  { to: '/company/integrations/business-central', label: 'Business Central', icon: Plug, end: false },
+  { to: '/company/integrations/tally', label: 'Tally', icon: Network, end: false },
   { to: '/company/profile', label: 'Profile', icon: UserRound, end: true },
   { to: '/company/password', label: 'Password', icon: KeyRound, end: true },
-  { to: '/company/tally', label: 'Tally IP', icon: Network, end: true },
 ]
 
 export function CompanyLayout() {

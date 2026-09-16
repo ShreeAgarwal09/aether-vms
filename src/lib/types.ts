@@ -30,6 +30,8 @@ export type Vendor = {
   approved_at?: string | null
   rejected_at?: string | null
   resubmitted_at?: string | null
+  bc_sync_status?: string | null
+  tally_sync_status?: string | null
   created_at: string
   updated_at?: string
 }

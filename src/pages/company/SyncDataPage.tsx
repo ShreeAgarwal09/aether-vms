@@ -21,7 +21,7 @@ export function SyncDataPage() {
     }
     setCount(data?.length ?? 0)
     setMessage(
-      `Local vendor data refreshed at ${new Date().toLocaleTimeString('en-IN')}. Business Central sync is not enabled in this phase.`,
+      `Local vendor data refreshed at ${new Date().toLocaleTimeString('en-IN')}. Use Integrations for Business Central and Tally.`,
     )
   }
 
@@ -30,7 +30,7 @@ export function SyncDataPage() {
       <PageHeader
         eyebrow="Data"
         title="Sync data"
-        description="Reload vendor records owned by your company from PostgreSQL. External ERP sync is intentionally not connected yet."
+        description="Reload vendor records owned by your company from PostgreSQL. Business Central and Tally posting live under Integrations."
       />
       <Card>
         <CardContent className="space-y-4 p-6">

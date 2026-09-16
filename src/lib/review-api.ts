@@ -94,6 +94,20 @@ export type VendorReview = {
   custom_fields: ReviewField[]
   documents: ReviewDocument[]
   history: ReviewHistoryItem[]
+  integration?: {
+    bc_sync_status: string
+    bc_vendor_id: string | null
+    bc_vendor_number: string | null
+    bc_last_synced_at: string | null
+    bc_last_error: string | null
+    bc_contact_sync_status: string
+    bc_gst_sync_status: string
+    bc_bank_sync_status: string
+    bc_document_sync_status: string
+    tally_sync_status: string
+    tally_last_synced_at: string | null
+    tally_last_error: string | null
+  }
 }
 
 type FunctionResponse = {
