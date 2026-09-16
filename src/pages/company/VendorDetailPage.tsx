@@ -36,6 +36,7 @@ export function VendorDetailPage() {
     if (!vendor) return
     const result = await resendVendorInvite(vendor.id)
     setFeedback(result.error ?? result.message ?? 'Invitation processed.')
+    if (result.inviteLink) setFeedback(`${result.message ?? 'Invitation updated.'} Link: ${result.inviteLink}`)
   }
 
   return (
@@ -43,7 +44,7 @@ export function VendorDetailPage() {
       <PageHeader
         eyebrow="Vendor details"
         title={vendor?.vendor_name || 'Vendor'}
-        description="Stored invitation information only. The 5-step vendor onboarding form is not part of this phase."
+        description="Stored invitation information. After a vendor submits the public onboarding form, status becomes pending. Company approve/reject is not in this phase."
         action={
           <Link to="/company/vendors" className="text-sm text-gold hover:text-gold-bright">
             Back to vendors
@@ -70,6 +71,7 @@ export function VendorDetailPage() {
               </div>
             </div>
             <Field label="Invitation date" value={formatDateTime(vendor.invited_at)} />
+            <Field label="Submitted" value={formatDateTime(vendor.submitted_at ?? null)} />
             <Field label="Created" value={formatDateTime(vendor.created_at)} />
             <div className="sm:col-span-2">
               <Button variant="outline" onClick={() => void resend()}>

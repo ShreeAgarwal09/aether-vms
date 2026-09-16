@@ -86,8 +86,9 @@ async function sendInviteEmail(options: {
     <p>${options.companyName} has invited you to complete vendor onboarding.</p>
     ${
       link
-        ? `<p>Your secure invitation link (the vendor form opens in a later release):<br /><a href="${link}">${link}</a></p>`
-        : '<p>Your invitation has been recorded. A secure form link will be issued when vendor onboarding is enabled.</p>'
+        ? `<p>Complete your vendor onboarding using this secure link (no login is required):<br /><a href="${link}">${link}</a></p>
+           <p>The link is unique to you and expires. Do not share it.</p>`
+        : '<p>Your invitation has been recorded. Ask the company for the secure onboarding link if this email has no URL (APP_BASE_URL is not configured).</p>'
     }
     <p>This message does not create a login account.</p>
   `
@@ -160,15 +161,23 @@ Deno.serve(async (req) => {
     const vendor = parsed as { vendor_name: string; email: string; vendor_phone: string }
     const rawToken = newToken()
     const hash = await sha256Hex(rawToken)
+    const invitedAt = new Date()
+    const expires = new Date(invitedAt.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
 
     if (existingId) {
       const { data: existing } = await service
         .from('vendors')
-        .select('id, company_user_id')
+        .select('id, company_user_id, status')
         .eq('id', existingId)
         .maybeSingle()
       if (!existing || existing.company_user_id !== caller.id) {
         return { error: 'Vendor not found.' }
+      }
+      if (existing.status === 'pending' || existing.status === 'approved') {
+        return { error: 'This vendor has already submitted onboarding.' }
+      }
+      if (existing.status === 'blocked') {
+        return { error: 'This vendor is blocked.' }
       }
       const { error } = await service
         .from('vendors')
@@ -176,8 +185,10 @@ Deno.serve(async (req) => {
           vendor_name: vendor.vendor_name,
           vendor_phone_number: vendor.vendor_phone,
           invite_token_hash: hash,
-          invited_at: new Date().toISOString(),
-          status: 'invited',
+          invited_at: invitedAt.toISOString(),
+          invite_expires_at: expires,
+          invite_consumed_at: null,
+          status: existing.status === 'rejected' ? 'rejected' : 'invited',
         })
         .eq('id', existingId)
         .eq('company_user_id', caller.id)
@@ -190,7 +201,8 @@ Deno.serve(async (req) => {
         vendor_phone_number: vendor.vendor_phone,
         status: 'invited',
         invite_token_hash: hash,
-        invited_at: new Date().toISOString(),
+        invited_at: invitedAt.toISOString(),
+        invite_expires_at: expires,
       })
       if (error) {
         if (error.code === '23505') return { error: `A vendor with email ${vendor.email} already exists.` }
@@ -206,10 +218,12 @@ Deno.serve(async (req) => {
       req,
     })
 
+    const base = appBase(req)
     return {
       email: vendor.email,
       emailQueued: mail.sent,
       emailNote: mail.reason,
+      inviteLink: base ? `${base}/onboard/${rawToken}` : `/onboard/${rawToken}`,
     }
   }
 
@@ -257,13 +271,13 @@ Deno.serve(async (req) => {
   if (body.action === 'invite_vendors_bulk') {
     const rows = Array.isArray(body.vendors) ? body.vendors.slice(0, 200) : []
     if (!rows.length) return json({ error: 'Upload at least one vendor row.' }, 400)
-    const results: Array<{ email?: string; ok: boolean; error?: string; emailQueued?: boolean }> = []
+    const results: Array<{ email?: string; ok: boolean; error?: string; emailQueued?: boolean; inviteLink?: string }> = []
     for (const row of rows) {
       const result = await persistInvite(row)
       if ('error' in result && result.error) {
         results.push({ email: clean(row.email) ?? undefined, ok: false, error: result.error })
       } else {
-        results.push({ email: result.email, ok: true, emailQueued: result.emailQueued })
+        results.push({ email: result.email, ok: true, emailQueued: result.emailQueued, inviteLink: result.inviteLink })
       }
     }
     return json({

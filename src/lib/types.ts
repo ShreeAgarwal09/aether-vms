@@ -25,6 +25,7 @@ export type Vendor = {
   vendor_phone_number: string | null
   status: VendorStatus
   invited_at: string | null
+  submitted_at?: string | null
   created_at: string
   updated_at?: string
 }

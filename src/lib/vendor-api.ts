@@ -2,7 +2,7 @@ import { getSupabase } from '@/lib/supabase'
 import type { Vendor, VendorStatus } from '@/lib/types'
 
 export const VENDOR_LIST_COLUMNS =
-  'id, vendor_name, email, vendor_phone_number, status, invited_at, created_at, updated_at'
+  'id, vendor_name, email, vendor_phone_number, status, invited_at, submitted_at, created_at, updated_at'
 
 export const PAGE_SIZE = 20
 
@@ -10,7 +10,8 @@ type FunctionResponse = {
   error?: string
   message?: string
   emailNote?: string
-  results?: Array<{ email?: string; ok: boolean; error?: string; emailQueued?: boolean }>
+  inviteLink?: string
+  results?: Array<{ email?: string; ok: boolean; error?: string; emailQueued?: boolean; inviteLink?: string }>
   created?: number
   failed?: number
 }
@@ -18,6 +19,7 @@ type FunctionResponse = {
 export type InviteResult = {
   error: string | null
   message?: string
+  inviteLink?: string
   created?: number
   failed?: number
   results?: FunctionResponse['results']
@@ -41,6 +43,7 @@ async function invokeCompany(body: Record<string, unknown>): Promise<InviteResul
   return {
     error: null,
     message: data?.message,
+    inviteLink: data?.inviteLink,
     created: data?.created,
     failed: data?.failed,
     results: data?.results,
@@ -145,5 +148,5 @@ export async function saveCompanyProfile(
 
 export type ListedVendor = Pick<
   Vendor,
-  'id' | 'vendor_name' | 'email' | 'vendor_phone_number' | 'status' | 'invited_at' | 'created_at' | 'updated_at'
+  'id' | 'vendor_name' | 'email' | 'vendor_phone_number' | 'status' | 'invited_at' | 'submitted_at' | 'created_at' | 'updated_at'
 >

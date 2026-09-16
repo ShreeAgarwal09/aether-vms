@@ -1,8 +1,8 @@
 # Vendor Management System
 
-Company portal and admin console for vendor management. Phase 4 adds a company-only Form Builder for custom vendor form templates.
+Company portal, admin console, Form Builder, and public vendor onboarding (Phase 5).
 
-The public 5-step vendor form, vendor submissions, email completion links, company review, Business Central, and Tally posting are not included.
+Company review/approve/reject, Business Central, and Tally posting are not included.
 
 ## Local setup
 
@@ -10,48 +10,44 @@ The public 5-step vendor form, vendor submissions, email completion links, compa
 2. `cp .env.example .env.local` and set **public** values only:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
-3. Apply migrations in `supabase/migrations/` (Phase 1–4).
+3. Apply migrations in `supabase/migrations/` (Phase 1–5).
 4. Deploy Edge Functions:
    - `vms-admin` (Phase 2)
-   - `vms-company` (Phase 3 invites)
+   - `vms-company` (Phase 3 invites) — JWT required
+   - `vms-vendor` (Phase 5 public onboarding) — JWT verification **disabled**; the invitation token is the credential
 5. Create an Auth user and promote it to admin, then add company users from the Admin console.
 6. `npm run dev` — http://127.0.0.1:45217
 
 Never put the Supabase **service-role** key in Vite or React.
 
-## Company routes
+## Routes
 
 | Path | Purpose |
 | --- | --- |
-| `/company` | Master dashboard and vendor stats |
-| `/company/vendors` | Vendor list, search, filters, Excel export |
-| `/company/vendors/invite` | Invite one vendor |
-| `/company/vendors/bulk` | Bulk Excel invite |
-| `/company/vendors/:id` | Stored vendor details (no 5-step form) |
-| `/company/sync` | Refresh local vendor data (no BC) |
-| `/company/form-builder` | List, create, activate, and delete form templates |
-| `/company/form-builder/:id` | Drag-and-drop field editor and local preview |
-| `/company/profile` | Company profile |
-| `/company/password` | Change password |
-| `/company/tally` | Tally host/port settings only |
+| `/login` | Admin and company sign-in |
+| `/company` | Master dashboard |
+| `/company/vendors` | Vendor list |
+| `/company/vendors/invite` | Invite one vendor (shows the onboarding link once) |
+| `/company/form-builder` | Form templates |
+| `/onboard/:token` | Public 5-step vendor form (no login) |
 
-## Security
+## Email
 
-- Vendors are owned by `company_user_id` (the company profile). RLS plus an insert trigger bind rows to `auth.uid()`.
-- Company users cannot insert vendors from the browser. Invites go through `vms-company`, which hashes the invitation token (SHA-256) and never returns the raw token.
-- Duplicate vendor emails are unique per company (`lower(email)`).
-- Blocked company users (`is_active = false`) cannot read or update vendors.
-- Form templates and fields are owned by `company_user_id` forced from `auth.uid()`. Admins cannot read another company's templates. At most one template per company can be `is_active`.
-
-## Email (optional)
-
-Set these on the `vms-company` Edge Function (Supabase secrets), not in the frontend:
+Set these as **Edge Function secrets** on `vms-company` (and `APP_BASE_URL` so mail contains an absolute `/onboard/:token` link):
 
 - `RESEND_API_KEY`
-- `EMAIL_FROM`
-- `APP_BASE_URL` (optional; falls back to the request Origin)
+- `EMAIL_FROM` (verified Resend sender)
+- `APP_BASE_URL` (public site origin, no trailing slash)
 
-If they are missing, the vendor row is still created and the UI reports that mail is pending configuration.
+If mail is not configured, the invite is still created. The company UI shows the secure link once at invite/resend time. The raw token is never stored; only `invite_token_hash` (SHA-256) is persisted. Links expire after 30 days.
+
+## Vendor documents
+
+Private bucket `vendor-documents`. Uploads go through `vms-vendor`. Objects are not public. Company users may read files under `{vendor_id}/…` for vendors they own, via Storage RLS. Vendors receive short-lived signed URLs for their own files only.
+
+## Aadhaar
+
+Full Aadhaar is not stored. The server saves `aadhaar_hash` (SHA-256 of digits) and `aadhaar_last4`. Column `adhar_card_number` is deprecated and left empty. Production hardening still needed: field-level encryption or a KMS, log redaction at the platform layer, and a dedicated Phase 6 review API so company browsers do not `select *` sensitive columns.
 
 ## Scripts
 

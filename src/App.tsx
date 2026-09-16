@@ -19,6 +19,7 @@ import { VendorsPage } from '@/pages/company/VendorsPage'
 import { HomeRedirect } from '@/pages/HomeRedirect'
 import { LoginPage } from '@/pages/LoginPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+import { OnboardPage } from '@/pages/onboard/OnboardPage'
 import { UnauthorizedPage } from '@/pages/UnauthorizedPage'
 
 export default function App() {
@@ -60,6 +61,7 @@ export default function App() {
             <Route path="password" element={<CompanyPasswordPage />} />
             <Route path="tally" element={<TallyIpPage />} />
           </Route>
+          <Route path="/onboard/:token" element={<OnboardPage />} />
           <Route path="/home" element={<Navigate to="/" replace />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
