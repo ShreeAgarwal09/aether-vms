@@ -1,7 +1,9 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { AdminLayout } from '@/components/AdminLayout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { AuthProvider } from '@/contexts/AuthContext'
-import { AdminDashboardPage } from '@/pages/AdminDashboardPage'
+import { AdminOverviewPage } from '@/pages/admin/AdminOverviewPage'
+import { CompaniesPage } from '@/pages/admin/CompaniesPage'
 import { CompanyDashboardPage } from '@/pages/CompanyDashboardPage'
 import { HomeRedirect } from '@/pages/HomeRedirect'
 import { LoginPage } from '@/pages/LoginPage'
@@ -20,10 +22,13 @@ export default function App() {
             path="/admin"
             element={
               <ProtectedRoute allowedRoles={['admin']}>
-                <AdminDashboardPage />
+                <AdminLayout />
               </ProtectedRoute>
             }
-          />
+          >
+            <Route index element={<AdminOverviewPage />} />
+            <Route path="companies" element={<CompaniesPage />} />
+          </Route>
           <Route
             path="/company"
             element={

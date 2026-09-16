@@ -34,8 +34,8 @@ export function LoginPage() {
     const from = (location.state as { from?: string } | null)?.from
     const home = dashboardPathForRole(profile.role)
     const destination =
-      from === '/admin' && profile.role === 'admin'
-        ? '/admin'
+      from?.startsWith('/admin') && profile.role === 'admin'
+        ? from
         : from === '/company' && profile.role === 'company'
           ? '/company'
           : home

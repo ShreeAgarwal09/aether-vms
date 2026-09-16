@@ -29,7 +29,7 @@ async function loadProfile(userId: string): Promise<Profile> {
   const { data, error } = await supabase
     .from('profiles')
     .select(
-      'id, email, company_name, company_mobile_number, company_address, gst_number, role, is_active, created_at',
+      'id, email, full_name, company_name, company_mobile_number, company_address, gst_number, role, is_active, created_at, updated_at',
     )
     .eq('id', userId)
     .single()
@@ -121,8 +121,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: signInError.message }
     }
 
-    await hydrate(data.session)
-    return { error: null }
+    if (!data.session?.user) {
+      return { error: 'Sign-in did not return a session.' }
+    }
+
+    try {
+      const nextProfile = await loadProfile(data.session.user.id)
+      if (!nextProfile.is_active) {
+        await supabase.auth.signOut()
+        return { error: 'This account has been blocked. Contact an administrator.' }
+      }
+      await hydrate(data.session)
+      return { error: null }
+    } catch (caught) {
+      await supabase.auth.signOut()
+      return { error: caught instanceof Error ? caught.message : 'Unable to load your profile.' }
+    }
   }, [hydrate])
 
   const signOut = useCallback(async () => {
