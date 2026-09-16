@@ -4,7 +4,7 @@ Vendor Management System for company-controlled onboarding, review, and optional
 
 Admin and company users sign in with Supabase Auth. Vendors never receive an Auth account. They use a one-time invitation URL whose raw token is hashed (SHA-256) before storage.
 
-This repository includes Phases 1–8:
+This repository includes Phases 1–9:
 
 1. Admin authentication  
 2. Company management  
@@ -12,16 +12,18 @@ This repository includes Phases 1–8:
 4. Form Builder  
 5. Public vendor onboarding  
 6. Company review (approve / reject / resubmit)  
-7. Business Central OAuth + Tally XML  
-8. Production hardening (RLS, validation, error handling, UX, docs)
+7. Business Central OAuth + vendor sync (Tally XML is deferred and not in the current product flow)  
+8. Production hardening (RLS, validation, error handling, UX, docs)  
+9. Functional QA (admin isolation, route aliases, submit/review guards)
 
 ## Tech stack
 
 - React 19, TypeScript, Vite, React Router, Tailwind CSS
 - Supabase Auth, Postgres (RLS), Storage (`vendor-documents`, private), Edge Functions
 - Optional: Microsoft Entra + Business Central API v2.0
-- Optional: Tally HTTP/XML listener
 - Optional: Resend for invitation email
+
+Tally HTTP/XML integration exists in the repository as deferred source (`supabase/functions/vms-tally`) but is **not** part of the current company portal, deploy path, or required secrets.
 
 ## Local development
 
@@ -29,7 +31,7 @@ This repository includes Phases 1–8:
 2. Copy `.env.example` to `.env.local` and set **public** values only:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY` (anon or publishable key — never the service-role key)
-3. Apply SQL in `supabase/migrations/` in filename order (Phase 1–8).
+3. Apply SQL in `supabase/migrations/` in filename order (Phase 1–9).
 4. Deploy Edge Functions (see below) and set function secrets.
 5. Create an Auth user, promote it to `admin` (see `supabase/seed_promote_admin.sql`), then add companies from `/admin`.
 6. `npm run dev` — http://127.0.0.1:45217
@@ -69,7 +71,7 @@ Phase 8 adds `20260916190000_phase8_hardening.sql` (revoke leftover grants, inde
 | `vms-company` | Required | Invite, review, document signing |
 | `vms-vendor` | **Disabled** | Public onboarding; token is the credential |
 | `vms-business-central` | Required | OAuth, BC API, vendor sync |
-| `vms-tally` | Required | Tally settings, XML, POST |
+| `vms-tally` | **Disabled (`enabled = false`)** | Deferred. Do not deploy. |
 
 Deploy from a machine with the Supabase CLI logged in, for example:
 
@@ -78,10 +80,9 @@ npx supabase functions deploy vms-admin --project-ref <ref>
 npx supabase functions deploy vms-company --project-ref <ref>
 npx supabase functions deploy vms-vendor --project-ref <ref>
 npx supabase functions deploy vms-business-central --project-ref <ref>
-npx supabase functions deploy vms-tally --project-ref <ref>
 ```
 
-Set `verify_jwt = false` only for `vms-vendor`.
+Do **not** deploy `vms-tally` for the current release. Set `verify_jwt = false` only for `vms-vendor`.
 
 ## Required secrets (Edge Functions / server)
 
@@ -122,7 +123,7 @@ API used (v2.0, documented Microsoft endpoints):
 
 **Not faked and not on the standard vendor API:** vendor bank accounts, extra GST locations, PAN, designations, assessee codes. Those remain in VMS and report `not_supported` / `unsupported`.
 
-Local **Approve vendor** works without BC. **Approve & sync** requires a connected BC company and will not create a second vendor once `bc_vendor_id` is stored. Tally never blocks Business Central.
+Local **Approve vendor** works without BC. **Approve & sync** requires a connected BC company and will not create a second vendor once `bc_vendor_id` is stored.
 
 OAuth uses PKCE. Access and refresh tokens are encrypted at rest and never returned to the browser. Refresh runs server-side.
 
@@ -132,15 +133,16 @@ OAuth uses PKCE. Access and refresh tokens are encrypted at rest and never retur
 - Use a confidential web client (client secret), not a public SPA client, because exchange happens in Edge Functions.
 - Restrict the app to the intended tenant if you do not want `common`.
 
-## Tally setup
+## Tally (deferred)
 
-1. Enable the Tally HTTP/XML listener.
-2. In `/company/integrations/tally`, save host, port, optional company name, then Test connection.
-3. Hosted Supabase Edge Functions **cannot** reach private LAN IPs. Tests fail honestly until Tally is reachable from the function runtime (tunnel, public IP, or self-hosted functions).
-4. Sync posts Import Data XML (`LEDGER` under Sundry Creditors). Success is recorded only if Tally responds without import errors.
-5. XML preview in the browser masks PAN and account numbers. The live POST uses the stored values.
+Tally is **not currently required** and is not shown in the company portal.
 
-Tally is optional and is not required for Business Central.
+- No Tally secrets.
+- No Tally setup for go-live.
+- Historical columns on `vendors` / `ip_configs` remain in applied Phase 3/7 migrations so existing databases stay compatible; the SPA does not read or write them.
+- Function source is retained under `supabase/functions/vms-tally` with `enabled = false` in `supabase/config.toml`.
+
+Do not re-enable until a later release explicitly restores the UI and deploy path.
 
 ## Email setup
 
@@ -150,9 +152,9 @@ Set `RESEND_API_KEY` and `EMAIL_FROM`. If they are missing, invitations still cr
 
 1. Create a production Supabase project.
 2. Apply all migrations.
-3. Deploy the five Edge Functions and set secrets.
+3. Deploy the Edge Functions listed above (`vms-admin`, `vms-company`, `vms-vendor`, `vms-business-central`) and set secrets. Do not deploy `vms-tally`.
 4. Confirm `vendor-documents` is private.
-5. Build the SPA (`npm run build`) and host the `dist/` folder (or a Vite-compatible host). Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` at **build** time.
+5. Build the SPA (`npm run build`) and host the `dist/` folder. `vercel.json` rewrites unknown paths to `index.html` so React Router deep links work on Vercel. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` at **build** time only.
 6. Set `APP_BASE_URL` and `BC_REDIRECT_URI` to the public origin.
 7. Promote the first admin user; create companies from `/admin`.
 
@@ -169,7 +171,6 @@ Set `RESEND_API_KEY` and `EMAIL_FROM`. If they are missing, invitations still cr
 ## Known limitations
 
 - Business Central does not expose every Indian GST/bank field on the standard vendor API.
-- Hosted Edge Functions cannot open Tally on a private network.
 - Invitation email requires Resend (or another provider you wire in).
 - There is no vendor Auth account or password reset for vendors.
 - `indian_state_codes` is not a separate table in this project; states are free-text with GSTIN format checks.
@@ -187,20 +188,22 @@ Manual route checks (with a real session where required):
 - `/admin`
 - `/company`
 - `/company/vendors`
+- `/company/sync`
+- `/company/sync-data` (redirects to `/company/sync`)
 - `/company/form-builder`
+- `/company/profile`
+- `/company/password`
 - `/company/integrations/business-central`
 - `/company/integrations/business-central/oauth-callback`
 - `/company/integrations/business-central/master-data`
 - `/company/integrations/business-central/vendor-templates`
-- `/company/integrations/tally`
 - `/onboard/:token`
 
-External BC and Tally tests need live credentials and a reachable Tally listener. The app must not report success unless those systems respond.
+External Business Central tests need live Entra/BC credentials. The app must not report success unless Business Central responds.
 
 ## Routes (company)
 
 | Path | Purpose |
 | --- | --- |
-| `/company/vendors/:id/review` | Review, approve/reject, BC validate/sync, Tally retry |
+| `/company/vendors/:id/review` | Review, approve/reject, BC validate/sync |
 | `/company/integrations/business-central` | OAuth, company select, test, disconnect |
-| `/company/tally` | Redirects to Tally integration |

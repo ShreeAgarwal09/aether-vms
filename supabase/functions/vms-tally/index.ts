@@ -1,6 +1,9 @@
 import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { buildCompanyPingXml, buildVendorLedgerXml } from './xml-builder.ts'
 
+// Deferred: this function is not in the active VMS product flow (`enabled = false` in config.toml).
+// Keep the source for a later re-enable. The SPA does not invoke vms-tally.
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -160,7 +163,7 @@ Deno.serve(async (req) => {
       return json({ error: 'Enable Tally and save host/port before testing.', code: 'unsupported' }, 400)
     }
     const ping = await postXml(config.tally_host, config.tally_port, buildCompanyPingXml(config.tally_company_name || undefined))
-    if (!ping.ok) {
+    if (!ping.ok || tallyFailed(ping.text)) {
       await service.from('ip_configs').update({
         connection_status: 'error',
         last_tested_at: new Date().toISOString(),

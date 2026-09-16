@@ -106,9 +106,6 @@ export type VendorReview = {
     bc_gst_sync_status: string
     bc_bank_sync_status: string
     bc_document_sync_status: string
-    tally_sync_status: string
-    tally_last_synced_at: string | null
-    tally_last_error: string | null
   }
 }
 

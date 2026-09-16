@@ -10,5 +10,8 @@ verify_jwt = false
 [functions.vms-business-central]
 verify_jwt = true
 
+# Tally is deferred and is not part of the current product flow.
+# Do not include vms-tally in deploy --all until it is explicitly re-enabled.
 [functions.vms-tally]
+enabled = false
 verify_jwt = true

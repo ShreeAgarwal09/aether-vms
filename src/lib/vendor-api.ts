@@ -3,7 +3,7 @@ import { getSupabase } from '@/lib/supabase'
 import type { Vendor, VendorStatus } from '@/lib/types'
 
 export const VENDOR_LIST_COLUMNS =
-  'id, vendor_name, email, vendor_phone_number, status, invited_at, submitted_at, created_at, updated_at, rejection_reason, approved_at, rejected_at, resubmitted_at, bc_sync_status, tally_sync_status'
+  'id, vendor_name, email, vendor_phone_number, status, invited_at, submitted_at, created_at, updated_at, rejection_reason, approved_at, rejected_at, resubmitted_at, bc_sync_status'
 
 export const PAGE_SIZE = 20
 
@@ -133,5 +133,4 @@ export type ListedVendor = Pick<
   | 'updated_at'
   | 'rejection_reason'
   | 'bc_sync_status'
-  | 'tally_sync_status'
 >

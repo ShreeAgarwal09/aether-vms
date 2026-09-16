@@ -138,7 +138,7 @@ export function CompanyDashboardPage() {
                 <h2 className="font-display text-lg text-ivory">Quick actions</h2>
                 <p className="mt-2 text-sm leading-6 text-mist">
                   Invite one vendor, import several from Excel, export the directory, or design a vendor form
-                  template. Completed submissions appear in Vendor review. Business Central and Tally are optional under Integrations.
+                  template. Completed submissions appear in Vendor review. Business Central is optional under Integrations.
                 </p>
               </div>
             </CardContent>

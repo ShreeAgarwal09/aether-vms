@@ -14,7 +14,7 @@ import {
   signVendorDocument,
   type VendorReview,
 } from '@/lib/review-api'
-import { invokeBc, invokeTally } from '@/lib/integration-api'
+import { invokeBc } from '@/lib/integration-api'
 
 const REJECT_HINTS = [
   'Missing information',
@@ -91,16 +91,6 @@ export function VendorReviewPage() {
     setSyncOpen(false)
     if (result.error) setNotice(String(result.error))
     else setNotice(String(result.message ?? 'Business Central sync finished.'))
-    await load(false)
-  }
-
-  async function onTallySync() {
-    if (busy) return
-    setBusy(true)
-    const result = await invokeTally({ action: 'sync_vendor_to_tally', vendorId })
-    setBusy(false)
-    if (result.error) setNotice(String(result.error))
-    else setNotice(String(result.message ?? 'Tally sync finished.'))
     await load(false)
   }
 
@@ -349,14 +339,9 @@ export function VendorReviewPage() {
               <Field label="GST locations" value={review.integration?.bc_gst_sync_status} />
               <Field label="Bank" value={review.integration?.bc_bank_sync_status} />
               <Field label="Documents" value={review.integration?.bc_document_sync_status} />
-              <Field label="Tally" value={review.integration?.tally_sync_status} />
-              <Field label="Tally last synced" value={review.integration?.tally_last_synced_at} />
             </Grid>
             {review.integration?.bc_last_error ? (
               <p className="text-sm text-red-200">{review.integration.bc_last_error}</p>
-            ) : null}
-            {review.integration?.tally_last_error ? (
-              <p className="text-sm text-red-200">{review.integration.tally_last_error}</p>
             ) : null}
             <div className="flex flex-wrap gap-2">
               {pending ? (
@@ -365,18 +350,13 @@ export function VendorReviewPage() {
                 </Button>
               ) : null}
               {review.status === 'approved' ? (
-                <>
-                  <Button variant="outline" disabled={busy} onClick={() => void onBcSync(false)}>
-                    {busy ? 'Syncing…' : 'Retry Business Central'}
-                  </Button>
-                  <Button variant="outline" disabled={busy} onClick={() => void onTallySync()}>
-                    {busy ? 'Syncing…' : 'Sync to Tally'}
-                  </Button>
-                </>
+                <Button variant="outline" disabled={busy} onClick={() => void onBcSync(false)}>
+                  {busy ? 'Syncing…' : 'Retry Business Central'}
+                </Button>
               ) : null}
             </div>
             <p className="text-xs text-mist">
-              Local Approve still works without Business Central. Tally never blocks BC. Extra GST locations and vendor bank accounts are not on the standard BC vendor API.
+              Local Approve still works without Business Central. Extra GST locations and vendor bank accounts are not on the standard BC vendor API.
             </p>
           </Section>
 
@@ -418,7 +398,7 @@ export function VendorReviewPage() {
           <ConfirmDialog
             open={approveOpen}
             title="Approve this vendor?"
-            description={`Approving ${name} is a business action. Local VMS status will become approved. This does not create a Business Central or Tally record.`}
+            description={`Approving ${name} is a business action. Local VMS status will become approved. This does not create a Business Central record.`}
             confirmLabel="Confirm approval"
             pending={busy}
             onClose={() => setApproveOpen(false)}
@@ -427,7 +407,7 @@ export function VendorReviewPage() {
           <ConfirmDialog
             open={syncOpen}
             title="Approve and sync to Business Central?"
-            description={`This validates ${name}, creates a vendor through the standard Business Central vendors API, then marks the VMS record approved if it is still pending. A second click will not create another BC vendor once a BC vendor ID is stored. Tally is not required.`}
+            description={`This validates ${name}, creates a vendor through the standard Business Central vendors API, then marks the VMS record approved if it is still pending. A second click will not create another BC vendor once a BC vendor ID is stored.`}
             confirmLabel="Approve & sync"
             pending={busy}
             onClose={() => setSyncOpen(false)}

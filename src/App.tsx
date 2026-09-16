@@ -17,7 +17,6 @@ import { FormBuilderEditorPage } from '@/pages/company/FormBuilderEditorPage'
 import { FormBuilderPage } from '@/pages/company/FormBuilderPage'
 import { InviteVendorPage } from '@/pages/company/InviteVendorPage'
 import { SyncDataPage } from '@/pages/company/SyncDataPage'
-import { TallyIntegrationPage } from '@/pages/company/TallyIntegrationPage'
 import { VendorDetailPage } from '@/pages/company/VendorDetailPage'
 import { VendorReviewPage } from '@/pages/company/VendorReviewPage'
 import { VendorsPage } from '@/pages/company/VendorsPage'
@@ -68,10 +67,10 @@ export default function App() {
             <Route path="integrations/business-central/oauth-callback" element={<BcOAuthCallbackPage />} />
             <Route path="integrations/business-central/master-data" element={<BcMasterDataPage />} />
             <Route path="integrations/business-central/vendor-templates" element={<BcVendorTemplatesPage />} />
-            <Route path="integrations/tally" element={<TallyIntegrationPage />} />
             <Route path="profile" element={<CompanyProfilePage />} />
             <Route path="password" element={<CompanyPasswordPage />} />
-            <Route path="tally" element={<Navigate to="/company/integrations/tally" replace />} />
+            <Route path="integrations/tally" element={<Navigate to="/company" replace />} />
+            <Route path="tally" element={<Navigate to="/company" replace />} />
           </Route>
           <Route path="/onboard/:token" element={<OnboardPage />} />
           <Route path="/home" element={<Navigate to="/" replace />} />

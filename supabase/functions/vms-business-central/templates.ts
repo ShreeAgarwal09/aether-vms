@@ -84,7 +84,12 @@ export async function deleteTemplate(service: SupabaseClient, callerId: string, 
 }
 
 export async function getStatus(service: SupabaseClient, callerId: string) {
-  const configured = Boolean(Deno.env.get('BC_CLIENT_ID') && Deno.env.get('BC_CLIENT_SECRET') && Deno.env.get('BC_REDIRECT_URI'))
+  const missing = [
+    !Deno.env.get('BC_CLIENT_ID') ? 'BC_CLIENT_ID' : null,
+    !Deno.env.get('BC_CLIENT_SECRET') ? 'BC_CLIENT_SECRET' : null,
+    !Deno.env.get('BC_REDIRECT_URI') ? 'BC_REDIRECT_URI' : null,
+  ].filter((name): name is string => Boolean(name))
+  const configured = missing.length === 0
   const { data: conn } = await service.from('business_central_connections').select(
     'tenant_id, environment, bc_company_id, bc_company_name, connection_status, connected_at, last_tested_at, last_error',
   ).eq('company_user_id', callerId).maybeSingle()
@@ -92,7 +97,7 @@ export async function getStatus(service: SupabaseClient, callerId: string) {
     .eq('company_user_id', callerId).eq('integration_type', 'business_central')
   return json({
     configured,
-    missing: [],
+    missing,
     connection: conn ?? {
       connection_status: 'not_connected',
       tenant_id: null,
@@ -109,14 +114,14 @@ export async function getStatus(service: SupabaseClient, callerId: string) {
 
 export async function getSyncStatus(service: SupabaseClient, callerId: string, vendorId: string) {
   const { data: vendor } = await service.from('vendors').select(
-    'id, status, bc_sync_status, bc_vendor_id, bc_vendor_number, bc_last_synced_at, bc_last_error, bc_sync_attempts, bc_contact_sync_status, bc_gst_sync_status, bc_bank_sync_status, bc_document_sync_status, tally_sync_status, tally_last_synced_at, tally_last_error, tally_sync_attempts',
+    'id, status, bc_sync_status, bc_vendor_id, bc_vendor_number, bc_last_synced_at, bc_last_error, bc_sync_attempts, bc_contact_sync_status, bc_gst_sync_status, bc_bank_sync_status, bc_document_sync_status',
   ).eq('id', vendorId).maybeSingle()
   if (!vendor || vendor.company_user_id === undefined) {
     const owned = await service.from('vendors').select('id, company_user_id').eq('id', vendorId).maybeSingle()
     if (!owned.data || owned.data.company_user_id !== callerId) return json({ error: 'Vendor not found.' }, 404)
   }
   const { data: full } = await service.from('vendors').select(
-    'id, status, company_user_id, bc_sync_status, bc_vendor_id, bc_vendor_number, bc_last_synced_at, bc_last_error, bc_sync_attempts, bc_contact_sync_status, bc_gst_sync_status, bc_bank_sync_status, bc_document_sync_status, tally_sync_status, tally_last_synced_at, tally_last_error, tally_sync_attempts',
+    'id, status, company_user_id, bc_sync_status, bc_vendor_id, bc_vendor_number, bc_last_synced_at, bc_last_error, bc_sync_attempts, bc_contact_sync_status, bc_gst_sync_status, bc_bank_sync_status, bc_document_sync_status',
   ).eq('id', vendorId).eq('company_user_id', callerId).maybeSingle()
   if (!full) return json({ error: 'Vendor not found.' }, 404)
   const { data: logs } = await service.from('integration_sync_logs').select(

@@ -220,9 +220,6 @@ export async function handleGetReview(
         bc_gst_sync_status: vendor.bc_gst_sync_status ?? 'not_started',
         bc_bank_sync_status: vendor.bc_bank_sync_status ?? 'not_started',
         bc_document_sync_status: vendor.bc_document_sync_status ?? 'not_started',
-        tally_sync_status: vendor.tally_sync_status ?? 'not_started',
-        tally_last_synced_at: vendor.tally_last_synced_at ?? null,
-        tally_last_error: vendor.tally_last_error ?? null,
       },
     },
   })

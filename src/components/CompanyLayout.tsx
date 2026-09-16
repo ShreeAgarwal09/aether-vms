@@ -9,7 +9,6 @@ import {
   LogOut,
   MailPlus,
   Menu,
-  Network,
   Plug,
   RefreshCw,
   ShieldCheck,
@@ -28,7 +27,6 @@ const links = [
   { to: '/company/sync', label: 'Sync data', icon: RefreshCw, end: true },
   { to: '/company/form-builder', label: 'Form builder', icon: LayoutTemplate, end: false },
   { to: '/company/integrations/business-central', label: 'Business Central', icon: Plug, end: false },
-  { to: '/company/integrations/tally', label: 'Tally', icon: Network, end: false },
   { to: '/company/profile', label: 'Profile', icon: UserRound, end: true },
   { to: '/company/password', label: 'Password', icon: KeyRound, end: true },
 ]

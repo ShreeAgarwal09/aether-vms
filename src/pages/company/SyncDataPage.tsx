@@ -21,7 +21,7 @@ export function SyncDataPage() {
     }
     setCount(data?.length ?? 0)
     setMessage(
-      `Local vendor data refreshed at ${new Date().toLocaleTimeString('en-IN')}. Use Integrations for Business Central and Tally.`,
+      `Local vendor data refreshed at ${new Date().toLocaleTimeString('en-IN')}. Use Integrations for Business Central.`,
     )
   }
 
@@ -30,12 +30,12 @@ export function SyncDataPage() {
       <PageHeader
         eyebrow="Data"
         title="Sync data"
-        description="Reload vendor records owned by your company from PostgreSQL. Business Central and Tally posting live under Integrations."
+        description="Reload vendor records owned by your company from PostgreSQL. Business Central posting lives under Integrations."
       />
       <Card>
         <CardContent className="space-y-4 p-6">
           <p className="text-sm leading-6 text-mist">
-            This action reads your vendors through Row Level Security. It does not call Business Central or Tally.
+            This action reads your vendors through Row Level Security. It does not call Business Central.
           </p>
           {count !== null ? <p className="text-ivory">{count} vendor records currently visible to this company.</p> : null}
           {message ? <p className="text-sm text-emerald-200">{message}</p> : null}

@@ -86,7 +86,6 @@ export function VendorDetailPage() {
             <Field label="Invitation date" value={formatDateTime(vendor.invited_at)} />
             <Field label="Submitted" value={formatDateTime(vendor.submitted_at ?? null)} />
             <Field label="BC sync" value={vendor.bc_sync_status ?? 'not_started'} />
-            <Field label="Tally sync" value={vendor.tally_sync_status ?? 'not_started'} />
             <Field label="Created" value={formatDateTime(vendor.created_at)} />
             {vendor.status === 'rejected' && vendor.rejection_reason ? (
               <div className="sm:col-span-2">

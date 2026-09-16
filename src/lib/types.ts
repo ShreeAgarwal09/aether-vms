@@ -31,16 +31,6 @@ export type Vendor = {
   rejected_at?: string | null
   resubmitted_at?: string | null
   bc_sync_status?: string | null
-  tally_sync_status?: string | null
   created_at: string
   updated_at?: string
-}
-
-export type IpConfig = {
-  id: string
-  company_user_id: string
-  tally_host: string | null
-  tally_port: number | null
-  is_enabled: boolean
-  notes: string | null
 }

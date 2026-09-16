@@ -15,7 +15,6 @@ export const MESSAGES = {
   bcConnect: 'Unable to connect to Business Central. Please check the integration configuration.',
   bcValidate: 'Vendor validation failed. Please review the highlighted fields.',
   bcCreate: 'Business Central vendor creation failed. You can retry.',
-  tallyUnreachable: 'Tally is unreachable. Check that Tally is running and the configured host/port are reachable.',
   generic: 'Something went wrong. Try again, or contact an administrator if it continues.',
   auth: 'Invalid email or password.',
 }

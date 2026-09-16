@@ -185,8 +185,7 @@ export function VendorsPage() {
                           </div>
                         </td>
                         <td className="py-4 text-xs text-mist">
-                          <p>BC: {vendor.bc_sync_status || 'not_started'}</p>
-                          <p>Tally: {vendor.tally_sync_status || 'not_started'}</p>
+                          BC: {vendor.bc_sync_status || 'not_started'}
                         </td>
                         <td className="py-4 text-mist">{formatDateTime(vendor.invited_at)}</td>
                         <td className="py-4 text-mist">{formatDateTime(vendor.created_at)}</td>
@@ -237,7 +236,7 @@ export function VendorsPage() {
                     </div>
                     <p className="mt-2 text-sm text-mist">{vendor.vendor_phone_number || 'No phone'}</p>
                     <p className="mt-1 text-xs text-mist">
-                      BC {vendor.bc_sync_status || 'not_started'} · Tally {vendor.tally_sync_status || 'not_started'}
+                      BC {vendor.bc_sync_status || 'not_started'}
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Link
@@ -320,7 +319,6 @@ async function exportRows(rows: ListedVendor[]) {
       Phone: vendor.vendor_phone_number ?? '',
       Status: vendor.status,
       'BC sync': vendor.bc_sync_status ?? '',
-      'Tally sync': vendor.tally_sync_status ?? '',
       'Invited at': vendor.invited_at ?? '',
       'Created at': vendor.created_at,
     })),
