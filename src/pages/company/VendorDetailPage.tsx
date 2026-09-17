@@ -4,7 +4,8 @@ import { PageHeader } from '@/components/PageHeader'
 import { formatDateTime, VendorStatusBadge } from '@/components/company/VendorStatusBadge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { fetchVendor, resendVendorInvite } from '@/lib/vendor-api'
+import { ConfirmDialog } from '@/components/ui/dialog'
+import { deleteVendor, fetchVendor, resendVendorInvite, setVendorBlocked } from '@/lib/vendor-api'
 import type { Vendor } from '@/lib/types'
 
 export function VendorDetailPage() {
@@ -14,6 +15,9 @@ export function VendorDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
   const [resending, setResending] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [blockOpen, setBlockOpen] = useState(false)
+  const [actionPending, setActionPending] = useState(false)
 
   useEffect(() => {
     if (!vendorId) return
@@ -40,6 +44,26 @@ export function VendorDetailPage() {
     setResending(false)
     setFeedback(result.error ?? result.message ?? 'Invitation processed.')
     if (result.inviteLink) setFeedback(`${result.message ?? 'Invitation updated.'} Link: ${result.inviteLink}`)
+  }
+
+  async function onDelete() {
+    if (!vendor || actionPending) return
+    setActionPending(true)
+    const result = await deleteVendor(vendor.id)
+    setActionPending(false)
+    setDeleteOpen(false)
+    setFeedback(result.error ?? result.message ?? 'Vendor deleted.')
+    if (!result.error) setVendor(null)
+  }
+
+  async function onBlock() {
+    if (!vendor || actionPending) return
+    setActionPending(true)
+    const result = await setVendorBlocked(vendor.id, true)
+    setActionPending(false)
+    setBlockOpen(false)
+    setFeedback(result.error ?? result.message ?? 'Vendor blocked.')
+    if (!result.error) setVendor({ ...vendor, status: 'blocked' })
   }
 
   return (
@@ -93,14 +117,43 @@ export function VendorDetailPage() {
                 <p className="mt-2 text-ivory">{vendor.rejection_reason}</p>
               </div>
             ) : null}
-            <div className="sm:col-span-2">
+            <div className="flex flex-wrap gap-3 sm:col-span-2">
               <Button variant="outline" onClick={() => void resend()} disabled={resending}>
                 {resending ? 'Sending…' : 'Resend invitation email'}
               </Button>
+              {vendor.status !== 'approved' && vendor.status !== 'pending' && vendor.status !== 'blocked' ? (
+                <Button variant="outline" onClick={() => setDeleteOpen(true)}>
+                  Delete vendor
+                </Button>
+              ) : null}
+              {vendor.status !== 'approved' && vendor.status !== 'blocked' ? (
+                <Button variant="outline" onClick={() => setBlockOpen(true)}>
+                  Block vendor
+                </Button>
+              ) : null}
             </div>
           </CardContent>
         </Card>
       ) : null}
+
+      <ConfirmDialog
+        open={deleteOpen}
+        title="Delete vendor record?"
+        description="This permanently removes the invitation and any unsubmitted data."
+        confirmLabel="Delete vendor"
+        pending={actionPending}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={() => void onDelete()}
+      />
+      <ConfirmDialog
+        open={blockOpen}
+        title="Block this vendor?"
+        description="Blocked vendors cannot use their onboarding link until you resend a new invitation."
+        confirmLabel="Block vendor"
+        pending={actionPending}
+        onClose={() => setBlockOpen(false)}
+        onConfirm={() => void onBlock()}
+      />
     </div>
   )
 }

@@ -1,3 +1,6 @@
+[functions.vms-auth]
+verify_jwt = false
+
 [functions.vms-admin]
 verify_jwt = true
 

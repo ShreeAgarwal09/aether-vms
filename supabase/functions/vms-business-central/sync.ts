@@ -1,5 +1,6 @@
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { bcFetch, companyUrl, connectionContext } from './bc-api.ts'
+import { sendApprovalEmail } from './resend.ts'
 import { DEFAULT_MAPPINGS, json, logSync, sanitizeExternalError } from './shared.ts'
 
 type Mapping = { vms: string; bc: string | null; supported: boolean }
@@ -282,6 +283,7 @@ export async function syncVendorToBc(
     patch.approved_by = callerId
   }
   await service.from('vendors').update(patch).eq('id', vendor.id)
+  let approvalEmailNote: string | null = null
   if (approveLocal && vendor.status === 'pending') {
     await service.from('vendor_review_history').insert({
       vendor_id: vendor.id,
@@ -289,6 +291,20 @@ export async function syncVendorToBc(
       action: 'approved',
       reason: 'Approved with Business Central sync.',
     })
+    const { data: profile } = await service
+      .from('profiles')
+      .select('company_name, email')
+      .eq('id', callerId)
+      .maybeSingle()
+    const companyName = profile?.company_name || profile?.email || 'Your company'
+    if (vendor.email) {
+      const mail = await sendApprovalEmail({
+        to: String(vendor.email),
+        companyName,
+        vendorName: String(vendor.vendor_name || 'Vendor'),
+      })
+      approvalEmailNote = mail.sent ? null : mail.reason
+    }
   }
   await logSync(service, {
     company_user_id: callerId,
@@ -316,7 +332,10 @@ export async function syncVendorToBc(
     gst: gstStatus,
     bank: 'not_supported',
     message: overall === 'synced'
-      ? 'Vendor created in Business Central.'
+      ? approveLocal && vendor.status === 'pending'
+        ? `Vendor approved, synced to Business Central.${approvalEmailNote ? ` ${approvalEmailNote}` : ' Approval email queued via Resend.'}`
+        : 'Vendor created in Business Central.'
       : 'Vendor header was created in Business Central. Some child data is unsupported or failed.',
+    emailNote: approvalEmailNote,
   })
 }

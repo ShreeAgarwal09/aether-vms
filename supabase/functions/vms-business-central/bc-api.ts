@@ -43,7 +43,7 @@ export async function connectionContext(service: SupabaseClient, callerId: strin
   return { token: token.token, conn, root: apiRoot(conn.tenant_id, conn.environment) }
 }
 
-function companyUrl(root: string, companyId: string, path: string) {
+export function companyUrl(root: string, companyId: string, path: string) {
   return `${root}/companies(${companyId})${path}`
 }
 

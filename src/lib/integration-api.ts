@@ -23,3 +23,7 @@ async function invokeBcFn(body: Record<string, unknown>): Promise<Fn> {
 }
 
 export const invokeBc = (body: Record<string, unknown>) => invokeBcFn(body)
+
+export function syncBcContacts() {
+  return invokeBcFn({ action: 'sync_bc_contacts' })
+}

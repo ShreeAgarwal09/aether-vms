@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { sendInviteEmail } from './email.ts'
 
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -59,54 +60,7 @@ function validateVendor(input: VendorInput) {
   return { vendor_name, email, vendor_phone: normalizePhone(phone) }
 }
 
-export async function sendInviteEmail(options: {
-  to: string
-  companyName: string
-  vendorName: string
-  token: string
-  req: Request
-}) {
-  const apiKey = Deno.env.get('RESEND_API_KEY')
-  const from = Deno.env.get('EMAIL_FROM')
-  if (!apiKey || !from) {
-    return { sent: false, reason: 'Email delivery is pending RESEND_API_KEY and EMAIL_FROM.' }
-  }
-
-  const base = appBase(options.req)
-  const link = base ? `${base}/onboard/${options.token}` : null
-  const html = `
-    <p>Hello ${options.vendorName},</p>
-    <p>${options.companyName} has invited you to complete vendor onboarding.</p>
-    ${
-      link
-        ? `<p>Complete your vendor onboarding using this secure link (no login is required):<br /><a href="${link}">${link}</a></p>
-           <p>The link is unique to you and expires. Do not share it.</p>`
-        : '<p>Your invitation has been recorded. Ask the company for the secure onboarding link if this email has no URL (APP_BASE_URL is not configured).</p>'
-    }
-    <p>This message does not create a login account.</p>
-  `
-
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from,
-      to: [options.to],
-      subject: `Vendor invitation from ${options.companyName}`,
-      html,
-    }),
-  })
-
-  if (!response.ok) {
-    await response.text()
-    return { sent: false, reason: 'Email provider rejected the message.' }
-  }
-
-  return { sent: true as const, reason: null }
-}
+export { sendInviteEmail } from './email.ts'
 
 export async function persistInvite(
   service: SupabaseClient,

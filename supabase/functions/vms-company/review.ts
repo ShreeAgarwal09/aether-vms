@@ -1,5 +1,6 @@
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { appBase, json } from './invite.ts'
+import { json, sha256Hex } from './invite.ts'
+import { onboardingLink, sendApprovalEmail, sendRejectionEmail } from './email.ts'
 
 type SnapshotField = {
   field_key: string
@@ -250,45 +251,10 @@ export async function handleSignDocument(
   })
 }
 
-async function sendRejectionEmail(options: {
-  to: string
-  companyName: string
-  vendorName: string
-  reason: string
-  req: Request
-}) {
-  const apiKey = Deno.env.get('RESEND_API_KEY')
-  const from = Deno.env.get('EMAIL_FROM')
-  if (!apiKey || !from) {
-    return { sent: false, reason: 'Notification email is pending RESEND_API_KEY and EMAIL_FROM configuration.' }
-  }
-  const base = appBase(options.req)
-  const html = `
-    <p>Hello ${options.vendorName},</p>
-    <p>${options.companyName} reviewed your vendor onboarding submission and needs corrections.</p>
-    <p><strong>Reason:</strong> ${options.reason.replace(/[<>]/g, '')}</p>
-    <p>Open the same secure onboarding link from your original invitation, update the requested information, and resubmit.</p>
-    ${base ? `<p>If you no longer have that email, ask ${options.companyName} to resend the invitation from their vendor directory.</p>` : ''}
-    <p>This message does not include bank details, PAN, Aadhaar, or other sensitive documents.</p>
-  `
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from,
-      to: [options.to],
-      subject: `Vendor onboarding needs corrections — ${options.companyName}`,
-      html,
-    }),
-  })
-  if (!response.ok) {
-    await response.text()
-    return { sent: false, reason: 'Email provider rejected the notification.' }
-  }
-  return { sent: true as const, reason: null }
+function newToken() {
+  const bytes = new Uint8Array(32)
+  crypto.getRandomValues(bytes)
+  return [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('')
 }
 
 export async function handleReviewVendor(
@@ -325,7 +291,21 @@ export async function handleReviewVendor(
       action: 'approved',
       reason: null,
     })
-    return json({ success: true, status: 'approved', message: `${vendor.vendor_name || 'Vendor'} is approved.` })
+    const mail = await sendApprovalEmail({
+      to: String(vendor.email),
+      companyName,
+      vendorName: String(vendor.vendor_name || 'Vendor'),
+      req,
+    })
+    return json({
+      success: true,
+      status: 'approved',
+      message: mail.sent
+        ? `${vendor.vendor_name || 'Vendor'} is approved and a notification email was queued via Resend.`
+        : `${vendor.vendor_name || 'Vendor'} is approved. ${mail.reason}`,
+      emailQueued: mail.sent,
+      emailNote: mail.reason,
+    })
   }
 
   if (decision === 'reject') {
@@ -339,12 +319,18 @@ export async function handleReviewVendor(
     if (!EMAIL_RE.test(String(vendor.email ?? ''))) {
       return json({ error: 'Vendor email is missing.' }, 400)
     }
+    const rawToken = newToken()
+    const hash = await sha256Hex(rawToken)
+    const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
     const now = new Date().toISOString()
     const { error } = await service.from('vendors').update({
       status: 'rejected',
       rejected_at: now,
       rejected_by: callerId,
       rejection_reason: reason,
+      invite_token_hash: hash,
+      invite_expires_at: expires,
+      invite_consumed_at: null,
     }).eq('id', vendor.id).eq('company_user_id', callerId).eq('status', 'pending')
     if (error) return json({ error: 'Could not reject this vendor.' }, 400)
     await service.from('vendor_review_history').insert({
@@ -358,6 +344,7 @@ export async function handleReviewVendor(
       companyName,
       vendorName: String(vendor.vendor_name || 'Vendor'),
       reason,
+      onboardingLink: onboardingLink(req, rawToken),
       req,
     })
     return json({

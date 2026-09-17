@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Navigate, useLocation } from 'react-router-dom'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 import { ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -87,7 +87,10 @@ export function LoginPage() {
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-gold">Aether VMS</p>
             <h2 className="font-display text-3xl text-ivory">Sign in</h2>
             <p className="text-sm leading-6 text-mist">
-              Use the email and password for your Admin or Company account.
+              Use the email and password for your Admin or Company account. New organization?{' '}
+              <Link to="/signup" className="text-gold underline-offset-4 hover:underline">
+                Sign up
+              </Link>
             </p>
           </CardHeader>
           <CardContent>
@@ -129,6 +132,11 @@ export function LoginPage() {
               <Button className="w-full" type="submit" disabled={submitting}>
                 {submitting ? 'Signing in…' : 'Continue'}
               </Button>
+              <p className="text-center text-sm text-mist">
+                <Link to="/forgot-password" className="text-gold underline-offset-4 hover:underline">
+                  Forgot password?
+                </Link>
+              </p>
             </form>
           </CardContent>
         </Card>

@@ -1,5 +1,7 @@
 import { clean, corsHeaders, json, persistInvite, serviceClient } from './invite.ts'
 import { handleGetReview, handleReviewVendor, handleSignDocument } from './review.ts'
+import { handleNotifyTemplateUpdated } from './template-notify.ts'
+import { handleDeleteVendor, handleSetVendorBlocked } from './vendor-actions.ts'
 
 type Payload = {
   action?: string
@@ -131,6 +133,25 @@ Deno.serve(async (req) => {
     if (!vendorId) return json({ error: 'Vendor id is required.' }, 400)
     if (decision !== 'approve' && decision !== 'reject') return json({ error: 'Invalid review action.' }, 400)
     return handleReviewVendor(service, caller.id, companyName, req, vendorId, decision, body.reason)
+  }
+
+  if (body.action === 'delete_vendor') {
+    const vendorId = clean(body.vendorId)
+    if (!vendorId) return json({ error: 'Vendor id is required.' }, 400)
+    return handleDeleteVendor(service, caller.id, vendorId)
+  }
+
+  if (body.action === 'set_vendor_blocked') {
+    const vendorId = clean(body.vendorId)
+    if (!vendorId) return json({ error: 'Vendor id is required.' }, 400)
+    if (typeof body.blocked !== 'boolean') return json({ error: 'blocked must be a boolean.' }, 400)
+    return handleSetVendorBlocked(service, caller.id, vendorId, body.blocked)
+  }
+
+  if (body.action === 'notify_template_updated') {
+    const templateId = clean(body.templateId)
+    if (!templateId) return json({ error: 'Template id is required.' }, 400)
+    return handleNotifyTemplateUpdated(service, caller.id, companyName, req, templateId)
   }
 
   return json({ error: 'Unsupported action.' }, 400)

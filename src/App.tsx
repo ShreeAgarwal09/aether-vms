@@ -21,7 +21,10 @@ import { VendorDetailPage } from '@/pages/company/VendorDetailPage'
 import { VendorReviewPage } from '@/pages/company/VendorReviewPage'
 import { VendorsPage } from '@/pages/company/VendorsPage'
 import { HomeRedirect } from '@/pages/HomeRedirect'
+import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage'
 import { LoginPage } from '@/pages/LoginPage'
+import { ResetPasswordPage } from '@/pages/ResetPasswordPage'
+import { SignupPage } from '@/pages/SignupPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { OnboardPage } from '@/pages/onboard/OnboardPage'
 import { UnauthorizedPage } from '@/pages/UnauthorizedPage'
@@ -33,6 +36,9 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomeRedirect />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
           <Route
             path="/admin"

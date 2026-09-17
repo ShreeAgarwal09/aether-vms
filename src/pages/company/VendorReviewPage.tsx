@@ -417,7 +417,7 @@ export function VendorReviewPage() {
           <Dialog
             open={rejectOpen}
             title="Reject vendor"
-            description="A rejection reason is required. The vendor can reopen the same secure onboarding link, edit their previous answers, and resubmit."
+            description="A rejection reason is required. The vendor receives a Resend email with a fresh secure onboarding link to edit and resubmit."
             onClose={() => !busy && setRejectOpen(false)}
           >
             <div className="space-y-4">

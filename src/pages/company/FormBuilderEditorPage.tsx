@@ -39,6 +39,7 @@ import {
   saveTemplateFields,
   updateTemplate,
 } from '@/lib/form-builder-api'
+import { notifyTemplateUpdated } from '@/lib/vendor-api'
 
 export function FormBuilderEditorPage() {
   const { templateId } = useParams()
@@ -161,6 +162,12 @@ export function FormBuilderEditorPage() {
     setTemplate(saved.data as FormTemplate)
     setDirty(false)
     setFeedback('Saved successfully.')
+    if (saved.data?.is_active) {
+      const notify = await notifyTemplateUpdated(templateId)
+      if (notify.message) {
+        setFeedback(`Saved successfully. ${notify.message}`)
+      }
+    }
   }
 
   async function toggleActive() {
@@ -179,7 +186,12 @@ export function FormBuilderEditorPage() {
       return
     }
     await load()
-    setFeedback(template.is_active ? 'Template deactivated.' : 'Template activated. Other templates were deactivated.')
+    const activated = !template.is_active
+    setFeedback(activated ? 'Template activated. Other templates were deactivated.' : 'Template deactivated.')
+    if (activated && templateId) {
+      const notify = await notifyTemplateUpdated(templateId)
+      if (notify.message) setFeedback(`Template activated. ${notify.message}`)
+    }
   }
 
   function requestLeave() {

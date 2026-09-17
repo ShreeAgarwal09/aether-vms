@@ -1,6 +1,7 @@
 import { clean, corsHeaders, json, requireCompany, serviceClient } from './shared.ts'
 import { disconnect, handleOauthCallback, startOauth } from './oauth.ts'
 import { fetchCompanies, getMasterData, selectCompany, testConnection } from './bc-api.ts'
+import { syncBcContacts } from './bc-contacts-sync.ts'
 import { syncVendorToBc, validateVendor } from './sync.ts'
 import { deleteTemplate, getStatus, getSyncStatus, listTemplates, saveTemplate } from './templates.ts'
 
@@ -44,6 +45,15 @@ Deno.serve(async (req) => {
   if (action === 'get_companies') return fetchCompanies(service, caller.id)
   if (action === 'select_company') return selectCompany(service, caller.id, body.bcCompanyId)
   if (action === 'get_master_data') return getMasterData(service, caller.id)
+  if (action === 'sync_bc_contacts' || action === 'sync_contacts_from_bc') {
+    const { data: profile } = await service
+      .from('profiles')
+      .select('company_name, email')
+      .eq('id', caller.id)
+      .maybeSingle()
+    const companyName = profile?.company_name || profile?.email || 'Your company'
+    return syncBcContacts(service, caller.id, companyName, req)
+  }
   if (action === 'list_templates') return listTemplates(service, caller.id)
   if (action === 'save_template') return saveTemplate(service, caller.id, body)
   if (action === 'delete_template') return deleteTemplate(service, caller.id, clean(body.id))

@@ -67,22 +67,26 @@ Phase 8 adds `20260916190000_phase8_hardening.sql` (revoke leftover grants, inde
 
 | Function | JWT | Role |
 | --- | --- | --- |
-| `vms-admin` | Required | Admin company CRUD, passwords |
-| `vms-company` | Required | Invite, review, document signing |
+| `vms-auth` | **Disabled** | Public password-reset requests (Resend) |
+| `vms-admin` | Required | Admin company CRUD, set-password emails (Resend) |
+| `vms-company` | Required | Invite, review, delete/block vendor, template notifications |
 | `vms-vendor` | **Disabled** | Public onboarding; token is the credential |
-| `vms-business-central` | Required | OAuth, BC API, vendor sync |
+| `vms-business-central` | Required | OAuth, BC API, vendor sync, BC contact sync |
 | `vms-tally` | **Disabled (`enabled = false`)** | Deferred. Do not deploy. |
 
 Deploy from a machine with the Supabase CLI logged in, for example:
 
 ```bash
+npx supabase functions deploy vms-auth --project-ref <ref>
 npx supabase functions deploy vms-admin --project-ref <ref>
 npx supabase functions deploy vms-company --project-ref <ref>
 npx supabase functions deploy vms-vendor --project-ref <ref>
 npx supabase functions deploy vms-business-central --project-ref <ref>
 ```
 
-Do **not** deploy `vms-tally` for the current release. Set `verify_jwt = false` only for `vms-vendor`.
+Do **not** deploy `vms-tally` for the current release. Set `verify_jwt = false` only for `vms-vendor` and `vms-auth`.
+
+Transactional email (invites, approve/reject, template updates, password reset) uses **Resend** via `RESEND_API_KEY` and `EMAIL_FROM`.
 
 ## Required secrets (Edge Functions / server)
 

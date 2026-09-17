@@ -1,4 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { sendPasswordResetEmail, sendSetPasswordEmail } from './email.ts'
+import { ensureDefaultFormTemplate } from './templates.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -45,11 +47,15 @@ function isGst(value: string) {
   return /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(value.toUpperCase())
 }
 
-function redirectTo(req: Request) {
+function appBase(req: Request) {
   const configured = Deno.env.get('APP_BASE_URL')?.replace(/\/$/, '')
   const origin = req.headers.get('origin')?.replace(/\/$/, '')
-  const base = configured || origin || ''
-  return base ? `${base}/login` : undefined
+  return configured || origin || ''
+}
+
+function redirectTo(req: Request, path = '/reset-password') {
+  const base = appBase(req)
+  return base ? `${base}${path}` : undefined
 }
 
 Deno.serve(async (req) => {
@@ -109,13 +115,14 @@ Deno.serve(async (req) => {
     if (!companyName) return json({ error: 'Company name is required.' }, 400)
     if (gst && !isGst(gst)) return json({ error: 'GST number format is invalid.' }, 400)
 
-    const { data: invited, error: inviteError } = await service.auth.admin.inviteUserByEmail(email, {
-      data: { full_name: fullName, company_name: companyName },
-      redirectTo: redirectTo(req),
+    const { data: created, error: createError } = await service.auth.admin.createUser({
+      email,
+      email_confirm: true,
+      user_metadata: { full_name: fullName, company_name: companyName },
     })
 
-    if (inviteError || !invited.user) {
-      return json({ error: inviteError?.message ?? 'Could not create the company user.' }, 400)
+    if (createError || !created.user) {
+      return json({ error: createError?.message ?? 'Could not create the company user.' }, 400)
     }
 
     const { error: profileError } = await service
@@ -130,18 +137,46 @@ Deno.serve(async (req) => {
         role: 'company',
         is_active: true,
       })
-      .eq('id', invited.user.id)
+      .eq('id', created.user.id)
 
     if (profileError) {
-      await service.auth.admin.deleteUser(invited.user.id)
+      await service.auth.admin.deleteUser(created.user.id)
       return json({ error: profileError.message }, 400)
     }
 
+    const templateResult = await ensureDefaultFormTemplate(service, created.user.id)
+    if (templateResult.error) {
+      await service.auth.admin.deleteUser(created.user.id)
+      return json({ error: templateResult.error }, 400)
+    }
+
+    const { data: linkData, error: linkError } = await service.auth.admin.generateLink({
+      type: 'invite',
+      email,
+      options: { redirectTo: redirectTo(req) },
+    })
+
+    if (linkError || !linkData?.properties?.action_link) {
+      return json({
+        userId: created.user.id,
+        emailQueued: false,
+        message: 'Company user created, but the set-password link could not be generated.',
+      })
+    }
+
+    const mail = await sendSetPasswordEmail({
+      to: email,
+      fullName,
+      companyName,
+      actionLink: linkData.properties.action_link,
+    })
+
     return json({
-      userId: invited.user.id,
-      emailQueued: true,
-      message:
-        'Company user created. A set-password email was queued by Supabase Auth. Configure custom SMTP if mail is not arriving.',
+      userId: created.user.id,
+      emailQueued: mail.sent,
+      message: mail.sent
+        ? 'Company user created. Set-password email queued via Resend.'
+        : `Company user created. ${mail.reason ?? 'Configure RESEND_API_KEY and EMAIL_FROM.'}`,
     })
   }
 
@@ -227,7 +262,7 @@ Deno.serve(async (req) => {
 
     const { data: target } = await service
       .from('profiles')
-      .select('id, email, role, is_active')
+      .select('id, email, full_name, role, is_active')
       .eq('id', userId)
       .maybeSingle()
 
@@ -235,24 +270,34 @@ Deno.serve(async (req) => {
       return json({ error: 'Company user not found.' }, 404)
     }
 
-    const { error: resetError } = await service.auth.resetPasswordForEmail(target.email, {
-      redirectTo: redirectTo(req),
+    const { data: linkData, error: resetError } = await service.auth.admin.generateLink({
+      type: 'recovery',
+      email: target.email,
+      options: { redirectTo: redirectTo(req) },
     })
 
-    if (resetError) {
+    if (resetError || !linkData?.properties?.action_link) {
       return json(
         {
-          error: resetError.message,
-          hint: 'Configure Auth SMTP (and APP_BASE_URL if using a custom site URL) in the Supabase project.',
+          error: resetError?.message ?? 'Could not generate a password reset link.',
+          hint: 'Configure APP_BASE_URL and Auth settings in the Supabase project.',
         },
         503,
       )
     }
 
+    const mail = await sendPasswordResetEmail({
+      to: target.email,
+      fullName: target.full_name || target.email,
+      actionLink: linkData.properties.action_link,
+    })
+
     return json({
       success: true,
-      emailQueued: true,
-      message: 'Set-password email queued through Supabase Auth.',
+      emailQueued: mail.sent,
+      message: mail.sent
+        ? 'Password reset email queued via Resend.'
+        : mail.reason ?? 'Configure RESEND_API_KEY and EMAIL_FROM.',
     })
   }
 

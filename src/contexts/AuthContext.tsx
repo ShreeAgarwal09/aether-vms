@@ -10,6 +10,17 @@ import {
 import type { Session, User } from '@supabase/supabase-js'
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase'
 import type { Profile } from '@/lib/types'
+import { saveCompanyProfile } from '@/lib/vendor-api'
+
+export type SignUpValues = {
+  email: string
+  password: string
+  full_name: string
+  company_name: string
+  company_mobile_number: string
+  company_address: string
+  gst_number: string
+}
 
 type AuthContextValue = {
   session: Session | null
@@ -19,6 +30,8 @@ type AuthContextValue = {
   error: string | null
   configured: boolean
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
+  signUp: (values: SignUpValues) => Promise<{ error: string | null; needsEmailConfirmation?: boolean }>
+  requestPasswordReset: (email: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
 }
@@ -140,6 +153,92 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [hydrate])
 
+  const signUp = useCallback(async (values: SignUpValues) => {
+    if (!isSupabaseConfigured) {
+      return { error: 'Supabase is not configured.' }
+    }
+
+    const supabase = getSupabase()
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email: values.email.trim(),
+      password: values.password,
+      options: {
+        data: {
+          full_name: values.full_name.trim(),
+          company_name: values.company_name.trim(),
+        },
+      },
+    })
+
+    if (signUpError) {
+      return { error: signUpError.message }
+    }
+
+    if (!data.user) {
+      return { error: 'Sign-up did not create a user.' }
+    }
+
+    if (!data.session) {
+      return { error: null, needsEmailConfirmation: true }
+    }
+
+    const { error: profileError } = await saveCompanyProfile(data.user.id, {
+      full_name: values.full_name.trim(),
+      company_name: values.company_name.trim(),
+      company_mobile_number: values.company_mobile_number.trim() || null,
+      company_address: values.company_address.trim() || null,
+      gst_number: values.gst_number.trim().toUpperCase() || null,
+    })
+
+    if (profileError) {
+      await supabase.auth.signOut()
+      return { error: profileError.message }
+    }
+
+    const { count } = await supabase
+      .from('vendor_form_templates')
+      .select('id', { count: 'exact', head: true })
+    if ((count ?? 0) === 0) {
+      await supabase.from('vendor_form_templates').insert({
+        name: 'Default vendor form',
+        description: 'Standard vendor onboarding template created automatically.',
+        is_active: true,
+        version: 1,
+      })
+    }
+
+    try {
+      const nextProfile = await loadProfile(data.user.id)
+      if (!nextProfile.is_active) {
+        await supabase.auth.signOut()
+        return { error: 'This account is inactive. Contact an administrator.' }
+      }
+      await hydrate(data.session)
+      return { error: null, needsEmailConfirmation: false }
+    } catch (caught) {
+      await supabase.auth.signOut()
+      return { error: caught instanceof Error ? caught.message : 'Unable to load your profile.' }
+    }
+  }, [hydrate])
+
+  const requestPasswordReset = useCallback(async (email: string) => {
+    if (!isSupabaseConfigured) {
+      return { error: 'Supabase is not configured.' }
+    }
+
+    const { data, error } = await getSupabase().functions.invoke<{ error?: string; success?: boolean }>(
+      'vms-auth',
+      { body: { action: 'request_password_reset', email: email.trim() } },
+    )
+    if (error) {
+      return { error: error.message }
+    }
+    if (data?.error) {
+      return { error: data.error }
+    }
+    return { error: null }
+  }, [])
+
   const signOut = useCallback(async () => {
     if (!isSupabaseConfigured) return
     await getSupabase().auth.signOut()
@@ -162,10 +261,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       error,
       configured: isSupabaseConfigured,
       signIn,
+      signUp,
+      requestPasswordReset,
       signOut,
       refreshProfile,
     }),
-    [session, profile, loading, error, signIn, signOut, refreshProfile],
+    [session, profile, loading, error, signIn, signUp, requestPasswordReset, signOut, refreshProfile],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

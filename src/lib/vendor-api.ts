@@ -99,6 +99,18 @@ export function resendVendorInvite(vendorId: string) {
   return invokeCompany({ action: 'resend_invite', vendorId })
 }
 
+export function deleteVendor(vendorId: string) {
+  return invokeCompany({ action: 'delete_vendor', vendorId })
+}
+
+export function setVendorBlocked(vendorId: string, blocked: boolean) {
+  return invokeCompany({ action: 'set_vendor_blocked', vendorId, blocked })
+}
+
+export function notifyTemplateUpdated(templateId: string) {
+  return invokeCompany({ action: 'notify_template_updated', templateId })
+}
+
 export async function saveCompanyProfile(
   userId: string,
   values: {

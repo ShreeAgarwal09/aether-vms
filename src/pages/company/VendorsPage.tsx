@@ -1,12 +1,20 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Download, Mail, Plus, Search } from 'lucide-react'
+import { Ban, Download, Mail, Plus, Search, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { formatDateTime, VendorStatusBadge } from '@/components/company/VendorStatusBadge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { fetchVendors, PAGE_SIZE, resendVendorInvite, type ListedVendor } from '@/lib/vendor-api'
+import { ConfirmDialog } from '@/components/ui/dialog'
+import {
+  deleteVendor,
+  fetchVendors,
+  PAGE_SIZE,
+  resendVendorInvite,
+  setVendorBlocked,
+  type ListedVendor,
+} from '@/lib/vendor-api'
 import type { VendorStatus } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -24,6 +32,9 @@ export function VendorsPage() {
   const [feedback, setFeedback] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
   const [resending, setResending] = useState<string | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [blockId, setBlockId] = useState<string | null>(null)
+  const [actionPending, setActionPending] = useState(false)
 
   async function load() {
     setLoading(true)
@@ -64,6 +75,26 @@ export function VendorsPage() {
     const result = await resendVendorInvite(id)
     setResending(null)
     setFeedback(result.error ?? result.message ?? 'Invitation processed.')
+    await load()
+  }
+
+  async function onDelete() {
+    if (!deleteId || actionPending) return
+    setActionPending(true)
+    const result = await deleteVendor(deleteId)
+    setActionPending(false)
+    setDeleteId(null)
+    setFeedback(result.error ?? result.message ?? 'Vendor deleted.')
+    await load()
+  }
+
+  async function onBlock() {
+    if (!blockId || actionPending) return
+    setActionPending(true)
+    const result = await setVendorBlocked(blockId, true)
+    setActionPending(false)
+    setBlockId(null)
+    setFeedback(result.error ?? result.message ?? 'Vendor blocked.')
     await load()
   }
 
@@ -217,6 +248,18 @@ export function VendorsPage() {
                               <Mail className="h-3.5 w-3.5" />
                               {resending === vendor.id ? 'Sending…' : 'Resend'}
                             </Button>
+                            {vendor.status !== 'approved' && vendor.status !== 'pending' && vendor.status !== 'blocked' ? (
+                              <Button size="sm" variant="outline" onClick={() => setDeleteId(vendor.id)}>
+                                <Trash2 className="h-3.5 w-3.5" />
+                                Delete
+                              </Button>
+                            ) : null}
+                            {vendor.status !== 'approved' && vendor.status !== 'blocked' ? (
+                              <Button size="sm" variant="outline" onClick={() => setBlockId(vendor.id)}>
+                                <Ban className="h-3.5 w-3.5" />
+                                Block
+                              </Button>
+                            ) : null}
                           </div>
                         </td>
                       </tr>
@@ -285,6 +328,25 @@ export function VendorsPage() {
           ) : null}
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={Boolean(deleteId)}
+        title="Delete vendor record?"
+        description="This permanently removes the invitation and any unsubmitted data. Approved or pending vendors cannot be deleted."
+        confirmLabel="Delete vendor"
+        pending={actionPending}
+        onClose={() => setDeleteId(null)}
+        onConfirm={() => void onDelete()}
+      />
+      <ConfirmDialog
+        open={Boolean(blockId)}
+        title="Block this vendor?"
+        description="Blocked vendors cannot use their onboarding link until you resend a new invitation."
+        confirmLabel="Block vendor"
+        pending={actionPending}
+        onClose={() => setBlockId(null)}
+        onConfirm={() => void onBlock()}
+      />
     </div>
   )
 
