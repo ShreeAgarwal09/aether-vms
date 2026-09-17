@@ -142,7 +142,7 @@ export function snapshotFields(vendor: Record<string, unknown>): SnapshotField[]
 export async function signedDocs(service: SupabaseClient, vendorId: string) {
   const { data } = await service
     .from('vendor_documents')
-    .select('id, document_type, storage_path, original_filename, mime_type, file_size')
+    .select('id, document_type, storage_path, original_filename, mime_type, file_size, gst_location_id')
     .eq('vendor_id', vendorId)
   const docs = []
   for (const row of data ?? []) {
@@ -155,9 +155,43 @@ export async function signedDocs(service: SupabaseClient, vendorId: string) {
       size: row.file_size,
       path: row.storage_path,
       signed_url: signed.data?.signedUrl ?? null,
+      gst_location_id: row.gst_location_id ?? null,
     })
   }
   return docs
+}
+
+export async function loadMasterData(service: SupabaseClient, companyUserId: string) {
+  const [{ data: states }, { data: designations }, { data: assesseeCodes }] = await Promise.all([
+    service.from('indian_state_codes').select('code, description, gst_code').order('description'),
+    service
+      .from('designations')
+      .select('id, name')
+      .eq('company_user_id', companyUserId)
+      .order('name'),
+    service
+      .from('assessee_codes')
+      .select('id, code, description')
+      .eq('company_user_id', companyUserId)
+      .order('code'),
+  ])
+
+  return {
+    states: (states ?? []).map((row: { code: string; description: string; gst_code: string }) => ({
+      code: row.code,
+      label: row.description,
+      gst_code: row.gst_code,
+    })),
+    designations: (designations ?? []).map((row: { id: string; name: string }) => ({
+      id: row.id,
+      label: row.name,
+    })),
+    assessee_codes: (assesseeCodes ?? []).map((row: { id: string; code: string; description: string | null }) => ({
+      id: row.id,
+      code: row.code,
+      label: row.description ? `${row.code} — ${row.description}` : row.code,
+    })),
+  }
 }
 
 export function asContacts(rows: Array<Record<string, unknown>>, fallbackEmail: string) {
@@ -188,11 +222,12 @@ export async function publicPayload(service: SupabaseClient, vendor: Record<stri
   const { data: contacts } = await service.from('vendor_contact_persons').select('*').eq('vendor_id', vendor.id)
   const { data: gstRows } = await service.from('vendor_gst_locations').select('*').eq('vendor_id', vendor.id)
   const docs = await signedDocs(service, String(vendor.id))
-  const cheque = docs.find((item) => item.kind === 'cancelled_cheque') ?? null
-  const supporting = docs.filter((item) => item.kind !== 'cancelled_cheque')
+  const byKind = (kind: string) => docs.find((item) => item.kind === kind) ?? null
+  const supporting = docs.filter((item) => item.kind === 'supporting_document')
   const snapshot = vendor.form_snapshot as { template_name?: string; version?: number; fields?: SnapshotField[] } | null
   const custom = (vendor.dynamic_field_data as Record<string, string | boolean | number | null>) ?? {}
   const submitted = vendor.status === 'pending' || vendor.status === 'approved'
+  const master_data = await loadMasterData(service, String(vendor.company_user_id))
   return {
     status: vendor.status,
     submitted,
@@ -204,46 +239,70 @@ export async function publicPayload(service: SupabaseClient, vendor: Record<stri
     template_name: snapshot?.template_name ?? null,
     template_version: snapshot?.version ?? vendor.template_version ?? null,
     fields: snapshotFields(vendor),
+    master_data,
     form: {
       vendor_name: vendor.vendor_name ?? '',
       legal_name: vendor.legal_name ?? '',
       vendor_type: vendor.vendor_type ?? '',
+      company_no: vendor.company_no ?? '',
+      company_name: vendor.company_name ?? '',
+      vendor_email: vendor.email ?? '',
       contacts: asContacts(contacts ?? [], String(vendor.email ?? '')),
       registered_address: vendor.registered_address ?? '',
       address_line: vendor.address_line1 ?? '',
+      address_line2: vendor.address_line2 ?? '',
       city: vendor.city ?? '',
       state: vendor.state ?? '',
       pin: vendor.pincode ?? '',
       country: vendor.country ?? 'India',
+      registered_under_gst: vendor.registered_under_gst ?? null,
       gst_number: vendor.gst_number ?? '',
       gst_registration_type: vendor.gst_registration_type ?? '',
+      more_than_one_gst: Boolean(vendor.more_than_one_gst),
+      number_of_gst_locations: vendor.number_of_gst_locations ?? '',
+      gst_filing_frequency: vendor.gst_filing_frequency ?? '',
+      gst_certificate: byKind('gst_certificate'),
       gst_locations: (gstRows ?? []).map((row: Record<string, unknown>) => ({
         id: row.id,
         location_name: row.gst_location ?? '',
         address: row.gst_address_line1 ?? '',
+        address_line2: row.address_line2 ?? '',
         city: row.city ?? '',
         state: row.state ?? '',
         pin: row.gst_pincode ?? '',
         gstin: row.gst_number ?? '',
+        gst_file: docs.find((item) => item.kind === 'gst_location' && item.gst_location_id === row.id) ?? null,
       })),
       bank_name: vendor.bank_name ?? '',
       account_holder_name: vendor.vendor_name_as_per_bank ?? '',
+      vendor_email_as_per_bank: vendor.vendor_email_as_per_bank ?? '',
       account_number: vendor.vendor_account_number ?? '',
       ifsc: vendor.vendor_bank_ifsc_code ?? '',
       branch: vendor.bank_branch ?? '',
       account_type: vendor.vendor_account_type ?? '',
-      cancelled_cheque: cheque,
+      cancelled_cheque: byKind('cancelled_cheque'),
+      website_url: vendor.website_url ?? '',
       pan: vendor.pan_card_number ?? '',
+      pan_card: byKind('pan_card'),
       aadhaar_input: '',
       aadhaar_masked: vendor.aadhaar_last4 ? `XXXX-XXXX-${vendor.aadhaar_last4}` : null,
+      aadhaar_card: byKind('aadhaar_card'),
+      aadhaar_declaration: byKind('aadhaar_declaration'),
       tds_details: vendor.tds_details ?? '',
+      tds_deduction_rate: vendor.tds_deduction_rate != null ? String(vendor.tds_deduction_rate) : '',
       assessee_code: vendor.assessee_code ?? '',
-      company_registration: vendor.company_no ?? '',
+      nature_of_entity: vendor.nature_of_entity ?? '',
       company_description: vendor.company_description ?? '',
       msme: Boolean(vendor.is_firm_msme),
       msme_number: vendor.msme_number ?? '',
+      msme_certificate: byKind('msme_certificate'),
       iec_registered: Boolean(vendor.is_iec_registered),
       iec_number: vendor.ice_registration_number ?? '',
+      e_invoice: byKind('e_invoice'),
+      declaration_non_e_invoicing: byKind('declaration_non_e_invoicing'),
+      udhyam_certificate: byKind('udhyam_certificate'),
+      declaration_194q: byKind('declaration_194q'),
+      declaration_206ab: byKind('declaration_206ab'),
       declaration_accurate: Boolean(vendor.declaration_accurate),
       additional_information: vendor.additional_information ?? '',
       supporting_docs: supporting,

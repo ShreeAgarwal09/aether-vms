@@ -32,6 +32,7 @@ Deno.serve(async (req) => {
   let form: Record<string, unknown> = {}
   let step = 1
   let kind = ''
+  let gstLocationId = ''
   let file: File | null = null
 
   try {
@@ -40,6 +41,7 @@ Deno.serve(async (req) => {
       action = clean(data.get('action'))
       token = clean(data.get('token')).toLowerCase()
       kind = clean(data.get('kind'))
+      gstLocationId = clean(data.get('location_id'))
       const uploaded = data.get('file')
       file = uploaded instanceof File ? uploaded : null
     } else {
@@ -75,7 +77,7 @@ Deno.serve(async (req) => {
 
   if (action === 'upload_document') {
     if (!file) return json({ error: 'A file is required.' }, 400)
-    return handleUpload(service, vendor, kind, file)
+    return handleUpload(service, vendor, kind, file, gstLocationId || null)
   }
 
   if (action === 'save_onboarding_progress' || action === 'submit_vendor') {
@@ -95,8 +97,6 @@ Deno.serve(async (req) => {
         ...validateCustom(fields, (form.custom as Record<string, unknown>) ?? {}, true),
       ]
       if (errors.length) return json({ error: errors[0], details: errors }, 400)
-      const { count } = await service.from('vendor_documents').select('id', { count: 'exact', head: true }).eq('vendor_id', vendor.id).eq('document_type', 'cancelled_cheque')
-      if (!count) return json({ error: 'Cancelled cheque is required.' }, 400)
     }
     const persistError = await persistForm(service, fresh, form, currentStep)
     if (persistError) return json({ error: 'Could not save this step. Check the highlighted fields and try again.' }, 400)

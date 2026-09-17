@@ -76,6 +76,10 @@ export async function loadOwnedVendor(service: SupabaseClient, callerId: string,
   return data as Record<string, unknown>
 }
 
+function hasDocument(docs: unknown[], type: string) {
+  return (docs as Array<Record<string, unknown>>).some((row) => row.document_type === type)
+}
+
 function submissionValid(vendor: Record<string, unknown>, contacts: unknown[], docs: unknown[]) {
   const errors: string[] = []
   if (!vendor.submitted_at) errors.push('This vendor has not submitted onboarding.')
@@ -84,12 +88,20 @@ function submissionValid(vendor: Record<string, unknown>, contacts: unknown[], d
   if (!/^\d{9,18}$/.test(String(vendor.vendor_account_number ?? ''))) errors.push('Bank account number is missing or invalid.')
   if (!IFSC_RE.test(String(vendor.vendor_bank_ifsc_code ?? '').toUpperCase())) errors.push('IFSC is missing or invalid.')
   if (!PIN_RE.test(String(vendor.pincode ?? ''))) errors.push('PIN code is missing or invalid.')
-  if (String(vendor.gst_registration_type ?? '') !== 'Unregistered') {
-    if (!GST_RE.test(String(vendor.gst_number ?? '').toUpperCase())) errors.push('GSTIN is missing or invalid.')
+  if (!String(vendor.nature_of_entity ?? '').trim()) errors.push('Nature of entity is missing.')
+  if (!String(vendor.assessee_code ?? '').trim()) errors.push('Assessee code is missing.')
+  const gstRegistered = vendor.registered_under_gst !== false && String(vendor.gst_registration_type ?? '') !== 'Unregistered'
+  if (gstRegistered && !GST_RE.test(String(vendor.gst_number ?? '').toUpperCase())) {
+    errors.push('GSTIN is missing or invalid.')
   }
   if (!contacts.length) errors.push('Contact persons are missing.')
-  const cheque = (docs as Array<Record<string, unknown>>).some((row) => row.document_type === 'cancelled_cheque')
-  if (!cheque) errors.push('Cancelled cheque is missing.')
+  if (!hasDocument(docs, 'cancelled_cheque')) errors.push('Cancelled cheque is missing.')
+  if (gstRegistered && !hasDocument(docs, 'gst_certificate')) errors.push('GST certificate is missing.')
+  if (!hasDocument(docs, 'pan_card')) errors.push('PAN card upload is missing.')
+  if (!hasDocument(docs, 'aadhaar_card')) errors.push('Aadhaar card upload is missing.')
+  if (!hasDocument(docs, 'aadhaar_declaration')) errors.push('Aadhaar declaration upload is missing.')
+  if (Boolean(vendor.is_firm_msme) && !hasDocument(docs, 'msme_certificate')) errors.push('MSME certificate is missing.')
+  if (Boolean(vendor.is_iec_registered) && !hasDocument(docs, 'e_invoice')) errors.push('E-invoice file is missing.')
   const fields = snapshotFields(vendor)
   const custom = (vendor.dynamic_field_data as Record<string, unknown>) ?? {}
   for (const field of fields) {
@@ -118,7 +130,7 @@ export async function handleGetReview(
       'id, contact_person_name, contact_person_designation, contact_person_email, contact_person_mobile, is_primary',
     ).eq('vendor_id', vendor.id),
     service.from('vendor_gst_locations').select(
-      'id, gst_location, gst_address_line1, city, state, gst_pincode, gst_number',
+      'id, gst_location, gst_address_line1, address_line2, city, state, gst_pincode, gst_number',
     ).eq('vendor_id', vendor.id),
     service.from('vendor_documents').select(
       'id, document_type, original_filename, mime_type, file_size',
@@ -151,6 +163,8 @@ export async function handleGetReview(
         vendor_name: vendor.vendor_name,
         legal_name: vendor.legal_name,
         vendor_type: vendor.vendor_type,
+        company_no: vendor.company_no,
+        company_name: vendor.company_name,
         email: vendor.email,
         phone: vendor.vendor_phone_number,
       },
@@ -164,16 +178,24 @@ export async function handleGetReview(
       address: {
         registered_address: vendor.registered_address,
         address_line: vendor.address_line1,
+        address_line2: vendor.address_line2,
         city: vendor.city,
         state: vendor.state,
         pin: vendor.pincode,
         country: vendor.country,
+        registered_under_gst: vendor.registered_under_gst === null || vendor.registered_under_gst === undefined
+          ? 'Not provided'
+          : vendor.registered_under_gst ? 'Yes' : 'No',
         gst_number: vendor.gst_number,
         gst_registration_type: vendor.gst_registration_type,
+        more_than_one_gst: vendor.more_than_one_gst ? 'Yes' : 'No',
+        number_of_gst_locations: vendor.number_of_gst_locations,
+        gst_filing_frequency: vendor.gst_filing_frequency,
       },
       gst_locations: (gstRows ?? []).map((row: Record<string, unknown>) => ({
         location_name: row.gst_location,
         address: row.gst_address_line1,
+        address_line2: row.address_line2,
         city: row.city,
         state: row.state,
         pin: row.gst_pincode,
@@ -183,17 +205,20 @@ export async function handleGetReview(
         bank_name: vendor.bank_name,
         branch: vendor.bank_branch,
         account_holder: vendor.vendor_name_as_per_bank,
+        vendor_email_as_per_bank: vendor.vendor_email_as_per_bank,
         account_number_masked: maskAccount(account),
         account_number: revealAccount ? account || null : undefined,
         ifsc: vendor.vendor_bank_ifsc_code,
         account_type: vendor.vendor_account_type,
       },
       company: {
+        website_url: vendor.website_url,
         pan: vendor.pan_card_number,
         aadhaar: vendor.aadhaar_last4 ? `XXXX-XXXX-${vendor.aadhaar_last4}` : 'Not provided',
         tds_details: vendor.tds_details,
+        tds_deduction_rate: vendor.tds_deduction_rate != null ? String(vendor.tds_deduction_rate) : null,
         assessee_code: vendor.assessee_code,
-        company_registration: vendor.company_no,
+        nature_of_entity: vendor.nature_of_entity,
         company_description: vendor.company_description,
       },
       other: {

@@ -177,7 +177,7 @@ Set `RESEND_API_KEY` and `EMAIL_FROM`. If they are missing, invitations still cr
 - Business Central does not expose every Indian GST/bank field on the standard vendor API.
 - Invitation email requires Resend (or another provider you wire in).
 - There is no vendor Auth account or password reset for vendors.
-- `indian_state_codes` is not a separate table in this project; states are free-text with GSTIN format checks.
+- Indian states use the `indian_state_codes` reference table (seeded in migrations) on the vendor onboarding form.
 
 ## Testing instructions
 

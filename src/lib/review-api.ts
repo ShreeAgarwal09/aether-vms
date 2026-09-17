@@ -42,6 +42,8 @@ export type VendorReview = {
     vendor_name: string | null
     legal_name: string | null
     vendor_type: string | null
+    company_no: string | null
+    company_name: string | null
     email: string
     phone: string | null
   }
@@ -55,16 +57,22 @@ export type VendorReview = {
   address: {
     registered_address: string | null
     address_line: string | null
+    address_line2: string | null
     city: string | null
     state: string | null
     pin: string | null
     country: string | null
+    registered_under_gst: string
     gst_number: string | null
     gst_registration_type: string | null
+    more_than_one_gst: string
+    number_of_gst_locations: string | null
+    gst_filing_frequency: string | null
   }
   gst_locations: Array<{
     location_name: string | null
     address: string | null
+    address_line2: string | null
     city: string | null
     state: string | null
     pin: string | null
@@ -74,17 +82,20 @@ export type VendorReview = {
     bank_name: string | null
     branch: string | null
     account_holder: string | null
+    vendor_email_as_per_bank: string | null
     account_number_masked: string | null
     account_number?: string | null
     ifsc: string | null
     account_type: string | null
   }
   company: {
+    website_url: string | null
     pan: string | null
     aadhaar: string
     tds_details: string | null
+    tds_deduction_rate: string | null
     assessee_code: string | null
-    company_registration: string | null
+    nature_of_entity: string | null
     company_description: string | null
   }
   other: {

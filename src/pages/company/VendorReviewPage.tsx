@@ -184,6 +184,8 @@ export function VendorReviewPage() {
               <Field label="Vendor name" value={review.basic.vendor_name} />
               <Field label="Legal name" value={review.basic.legal_name} />
               <Field label="Vendor type" value={review.basic.vendor_type} />
+              <Field label="Company no." value={review.basic.company_no} />
+              <Field label="Company name" value={review.basic.company_name} />
               <Field label="Email" value={review.basic.email} />
               <Field label="Phone" value={review.basic.phone} />
             </Grid>
@@ -212,13 +214,18 @@ export function VendorReviewPage() {
           <Section title="Address & GST">
             <Grid>
               <Field label="Registered address" value={review.address.registered_address} />
-              <Field label="Address line" value={review.address.address_line} />
+              <Field label="Address line 1" value={review.address.address_line} />
+              <Field label="Address line 2" value={review.address.address_line2} />
               <Field label="City" value={review.address.city} />
               <Field label="State" value={review.address.state} />
               <Field label="PIN" value={review.address.pin} />
               <Field label="Country" value={review.address.country} />
+              <Field label="Registered under GST" value={review.address.registered_under_gst} />
               <Field label="GST type" value={review.address.gst_registration_type} />
               <Field label="GSTIN" value={review.address.gst_number} />
+              <Field label="More than one GST location" value={review.address.more_than_one_gst} />
+              <Field label="Number of GST locations" value={review.address.number_of_gst_locations} />
+              <Field label="GST filing frequency" value={review.address.gst_filing_frequency} />
             </Grid>
             <h3 className="mt-6 text-sm font-medium text-ivory">GST locations</h3>
             {review.gst_locations.length ? (
@@ -227,7 +234,8 @@ export function VendorReviewPage() {
                   <div key={`${location.gstin}-${index}`} className="rounded-xl border border-line p-4">
                     <Grid>
                       <Field label="Location name" value={location.location_name} />
-                      <Field label="Address" value={location.address} />
+                      <Field label="Address line 1" value={location.address} />
+                      <Field label="Address line 2" value={location.address_line2} />
                       <Field label="City" value={location.city} />
                       <Field label="State" value={location.state} />
                       <Field label="PIN" value={location.pin} />
@@ -246,6 +254,7 @@ export function VendorReviewPage() {
               <Field label="Bank name" value={review.bank.bank_name} />
               <Field label="Branch" value={review.bank.branch} />
               <Field label="Account holder" value={review.bank.account_holder} />
+              <Field label="Email as per bank" value={review.bank.vendor_email_as_per_bank} />
               <div>
                 <p className="text-xs uppercase tracking-[0.16em] text-mist">Account number</p>
                 <p className="mt-2 font-mono text-ivory">
@@ -269,12 +278,14 @@ export function VendorReviewPage() {
 
           <Section title="Company details">
             <Grid>
+              <Field label="Website" value={review.company.website_url} />
+              <Field label="Nature of entity" value={review.company.nature_of_entity} />
+              <Field label="Assessee code" value={review.company.assessee_code} />
               <Field label="PAN" value={review.company.pan} />
               <Field label="Aadhaar" value={review.company.aadhaar} />
+              <Field label="TDS deduction rate" value={review.company.tds_deduction_rate} />
               <Field label="TDS information" value={review.company.tds_details} />
-              <Field label="Assessee code" value={review.company.assessee_code} />
-              <Field label="Registration / company no." value={review.company.company_registration} />
-              <Field label="Company information" value={review.company.company_description} />
+              <Field label="Company description" value={review.company.company_description} />
             </Grid>
           </Section>
 

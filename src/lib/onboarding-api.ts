@@ -1,4 +1,11 @@
-import type { DocRef, OnboardingForm, SnapshotField } from '@/lib/onboarding'
+import type {
+  DocRef,
+  MasterAssessee,
+  MasterOption,
+  MasterState,
+  OnboardingForm,
+  SnapshotField,
+} from '@/lib/onboarding'
 
 const INVALID = 'Invalid or expired invitation.'
 
@@ -12,6 +19,11 @@ export type OnboardingPayload = {
   expires_at: string | null
   form: OnboardingForm
   fields: SnapshotField[]
+  master_data?: {
+    states: MasterState[]
+    designations: MasterOption[]
+    assessee_codes: MasterAssessee[]
+  }
   template_name: string | null
   template_version: number | null
 }
@@ -54,12 +66,18 @@ export async function vendorOnboard(body: Record<string, unknown>) {
   return parseResponse(response)
 }
 
-export async function uploadVendorDocument(token: string, kind: string, file: File) {
+export async function uploadVendorDocument(
+  token: string,
+  kind: string,
+  file: File,
+  locationId?: string,
+) {
   const { url, key } = endpoint()
   const form = new FormData()
   form.set('action', 'upload_document')
   form.set('token', token)
   form.set('kind', kind)
+  if (locationId) form.set('location_id', locationId)
   form.set('file', file)
   const response = await fetch(url, {
     method: 'POST',
